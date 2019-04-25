@@ -1,2 +1,2 @@
 # jagged-array
-Multidimensional [jr]agged array support for the PyData ecosysem
+Multidimensional [jr]agged array support for the PyData ecosystem
