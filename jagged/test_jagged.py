@@ -12,15 +12,14 @@ import numpy as np
 from .jagged import JaggedArray
 
 
-@pytest.fixture(name='ja')
+@pytest.fixture(name="ja")
 def jagged_array():
     return JaggedArray(np.arange(8), [[3, 2, 3]])
 
 
-@pytest.fixture(name='jab')
+@pytest.fixture(name="jab")
 def big_jagged_array():
-    return JaggedArray(np.arange(33), np.array([[3, 2, 3],
-                                                [3, 6, 4]]))
+    return JaggedArray(np.arange(33), np.array([[3, 2, 3], [3, 6, 4]]))
 
 
 class TestVerify(object):
@@ -62,5 +61,6 @@ def test_get(ja):
 class TestToFrom(object):
     def test_array(self, ja):
         assert ja == JaggedArray.from_aoa(ja.to_aoa())
+
     def test_masked(self, ja):
         assert ja == JaggedArray.from_masked(ja.to_masked())

@@ -10,7 +10,6 @@ from collections.abc import Iterable
 from functools import partial
 
 import numpy as np
-import pandas as pd
 
 
 def infer_nan(dtype):
@@ -414,7 +413,7 @@ class JaggedArray(object):
             np.ndarray
 
         Examples:
-             >>> JaggedArray(np.arange(8), np.array([[3, 2, 3]])).to_array()
+            >>> JaggedArray(np.arange(8), np.array([[3, 2, 3]])).to_array()
             array([array([  0.,   1.,   2.]),
                    array([  3.,   4.,  nan]),
                    array([  5.,   6.,   7.])], dtype=np.float64)
@@ -538,15 +537,67 @@ class JaggedArray(object):
     def __mod__(self, other):
         return self._binary_elementwise_op(other, np.mod)
 
-    def clip(self, amin=None, amax=None):
-        return self._unitary_op(partial(np.clip, amin, amax))
+    def clip(self, a_min=None, a_max=None):
+        """ Clip the values of the array.
+
+        Args:
+            a_min (float or None):
+                Lower bound of clipping interval.  Values below this will be
+                set to this value.
+            a_max (float or None):
+                Upper bound of clipping interval.  Values above this will be
+                set to this value.
+
+        Returns:
+            JaggedArray
+
+        Examples:
+            >>> JaggedArray(np.arange(7), [2, 3, 2]).clip(2, 5)
+            JaggedArray(data=[ 2 2 2 3 4 5 5],
+                        shape=[[2, 3, 2]],
+                        dtype=int64)
+        """
+
+        return self._unitary_op(partial(np.clip, a_min=a_min, a_max=a_max))
 
     def conjugate(self):
+        """ Return the element-wise complex conjugate.
+
+        The complex conjugate of a number is obtained by changing the sign of
+        its imaginary part.
+
+        Returns:
+            JaggedArray
+
+        Examples:
+            >>> JaggedArray([np.complex(0, 1), np.complex(1, 1), np.complex(1, -1)], [[2, 1]]).conjugate()
+            JaggedArray(data=[0.-1.j 1.-1.j 1.+j],
+                        shape=[[2 1]],
+                        dtype=complex128)
+        """
         return self._unitary_op(np.conjugate)
 
     conj = conjugate
 
     def fill(self, value):
+        """ Fill the array with a scalar value.
+
+        Args:
+            value (any):
+                All elements of `a` will be assigned this value.
+
+        Examples:
+            >>> ja = JaggedArray(np.arange(7), [[3, 2, 3]])
+            >>> ja.fill(0)
+            >>> ja
+            JaggedArray(data=[0 0 0 0 0 0 0],
+                        shape=[[3 2 3]],
+                        dtype=int64)
+
+        Returns:
+            None
+        """
+
         self.data[...] = value
 
     @property
@@ -932,7 +983,7 @@ def stack(objs):
         ...                                           [3, 6, 4]]))
 
         >>> stack([ja, ja])
-        JaggedArray(data=[ 0  1  2 ..., 30 31 32],
+        JaggedArray(data=[ 0  1  2 ... 30 31 32],
                     shape=[[6 4 6]
                            [3 6 4],
                            [2 2 2]],
@@ -946,4 +997,3 @@ def stack(objs):
         np.array_equal(objs[0].shape, other.shape) for other in objs[1:]
     ), "all shapes must be equal."
     return concatenate([obj.expand_dims(axis=-1) for obj in objs], axis=-1)
-
