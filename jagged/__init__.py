@@ -5,3 +5,6 @@
 # License: MIT
 
 from .jagged import JaggedArray
+from .utils import random
+
+__all__ = ['JaggedArray', 'random']
