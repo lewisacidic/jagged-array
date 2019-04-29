@@ -4,7 +4,7 @@
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
 
-from .jagged import JaggedArray
+from .core import JaggedArray
 from .utils import random
 
 __all__ = ['JaggedArray', 'random']

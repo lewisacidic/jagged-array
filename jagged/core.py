@@ -11,36 +11,8 @@ from functools import partial
 
 import numpy as np
 
-
-def infer_nan(dtype):
-    """ Infer the nan value for a given dtype
-
-    Examples:
-        >>> infer_nan(np.int32)
-        nan
-
-        >>> infer_nan(np.float64)
-        nan
-
-        >>> infer_nan(np.dtype('S4'))
-        'N/A'
-
-        >>> infer_nan(np.object_))
-        None
-    """
-
-    if np.issubdtype(dtype, np.number):
-        return np.nan
-    elif np.issubdtype(dtype, np.str):
-        return "N/A"
-    else:
-        return None
-
-
-def is_float(obj):
-    """ Whether an object is a float. """
-
-    return isinstance(obj, (float, np.float))
+from .utils import infer_nan
+from .utils import is_float
 
 
 class JaggedArray(object):
