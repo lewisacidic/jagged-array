@@ -9,7 +9,7 @@
 import pytest
 import numpy as np
 
-from .jagged import JaggedArray
+from ..jagged import JaggedArray
 
 
 @pytest.fixture(name="ja")
