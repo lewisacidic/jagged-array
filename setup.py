@@ -22,7 +22,10 @@ if __name__ == "__main__":
             "dev": [
                 "pytest",
                 "black",
-                "flake8"
+                "flake8",
+                "pytest-cov",
+                "pytest-flake8",
+                "pytest-cov"
             ]
         }
     )
