@@ -4,7 +4,7 @@
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
 
-""" Jagged array support for scikit-chem. """
+""" Jagged array """
 
 from __future__ import annotations
 
@@ -94,6 +94,12 @@ class JaggedArray(object):
         """ the number of elements in the jagged array. """
 
         return self.sizes.sum()
+
+    @property
+    def nbytes(self) -> int:
+        """ the number of bytes taken up by the jagged array. """
+
+        return self.data.nbytes + self.shape.nbytes
 
     @property
     def ndim(self) -> int:
