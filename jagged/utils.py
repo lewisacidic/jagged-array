@@ -5,15 +5,15 @@
 # License: MIT
 
 from numbers import Integral
-from typing import Tuple, Callable, Optional
+from typing import Callable, Optional, Any
 
 import numpy as np
 
-from .typing import RandomState, Dtype
+from .typing import RandomState, DtypeLike, ArrayLike
 
 
 def random(
-    shape: Tuple[int],
+    shape: ArrayLike,
     random_state: Optional[RandomState] = None,
     data_rvs: Optional[Callable] = None,
 ):
@@ -68,7 +68,7 @@ def random(
     return JaggedArray(data_rvs(size), shape)
 
 
-def infer_nan(dtype: Dtype):
+def infer_nan(dtype: DtypeLike) -> Any:
     """ Infer the nan value for a given dtype
 
     Examples:
@@ -93,7 +93,7 @@ def infer_nan(dtype: Dtype):
         return None
 
 
-def is_float(obj):
+def is_float(obj: Any) -> bool:
     """ Whether an object is a float. """
 
     return isinstance(obj, (float, np.float))
