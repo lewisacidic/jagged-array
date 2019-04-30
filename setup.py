@@ -17,7 +17,7 @@ if __name__ == "__main__":
         license="MIT",
         keywords="jagged ragged multidimensional array",
         url="https://github.com/lewisacidic/jagged",
-        requirements=["numpy"],
+        install_requires=["numpy"],
         extras_require={
             "dev": [
                 "pytest",
