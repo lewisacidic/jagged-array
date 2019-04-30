@@ -864,7 +864,9 @@ def expand_dims(arr: JaggedArray, axis: int = -1) -> JaggedArray:
     return arr.reshape(np.insert(arr.shape, axis, np.ones(len(arr), int), axis=0))
 
 
-def collapse_dims(arr: JaggedArray, axis: int = -1, inplace: bool = False) -> JaggedArray:
+def collapse_dims(
+    arr: JaggedArray, axis: int = -1, inplace: bool = False
+) -> JaggedArray:
     """ Collapse a dimension to the lower one.
 
     Examples:

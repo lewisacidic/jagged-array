@@ -7,4 +7,4 @@
 from .core import JaggedArray
 from .utils import random
 
-__all__ = ['JaggedArray', 'random']
+__all__ = ["JaggedArray", "random"]
