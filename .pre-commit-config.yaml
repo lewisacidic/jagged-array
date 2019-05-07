@@ -18,3 +18,11 @@ repos:
   rev: 3.7.7
   hooks:
   - id: flake8
+- repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+  sha: v1.0.0
+  hooks:
+  - id: commitlint
+    additional_dependencies:
+    - "@commitlint/config-conventional"
+    stages:
+    - commit-msg
