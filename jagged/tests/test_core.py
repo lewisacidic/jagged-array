@@ -3,13 +3,11 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-
 """ tests for jagged arrays. """
-
-import pytest
 import numpy as np
+import pytest
 
-from ..jagged import JaggedArray
+from ..core import JaggedArray
 
 
 @pytest.fixture(name="ja")

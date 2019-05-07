@@ -3,18 +3,18 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-
-import pytest
 import numpy as np
+import pytest
 
-import jagged
-from ..io.npz import save_npz, load_npz
+from ..io.npz import load_npz
+from ..io.npz import save_npz
+from ..utils import random
 
 
 @pytest.mark.parametrize("compressed", [False, True])
 def test_roundtrip(compressed, tmp_path):
     path = tmp_path / "jagged.npz"
-    saved = jagged.random(shape=[[20, 20, 20]])
+    saved = random(shape=[[20, 20, 20]])
     save_npz(path, saved, compressed=compressed)
     loaded = load_npz(path)
     assert saved == loaded

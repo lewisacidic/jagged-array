@@ -3,9 +3,8 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-
-import pytest
 import numpy as np
+import pytest
 
 from ..utils import random
 

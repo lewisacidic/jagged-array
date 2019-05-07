@@ -3,10 +3,12 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-
-import sys
 import shlex
-from setuptools import setup, find_packages, Command
+import sys
+
+from setuptools import Command
+from setuptools import find_packages
+from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
 

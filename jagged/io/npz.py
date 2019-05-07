@@ -3,7 +3,6 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-
 import numpy as np
 
 from ..jagged import JaggedArray

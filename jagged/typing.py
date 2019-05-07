@@ -3,10 +3,11 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-
-from typing import TextIO, BinaryIO, Union
-from collections import Iterable
 from pathlib import Path
+from typing import BinaryIO
+from typing import Iterable
+from typing import TextIO
+from typing import Union
 
 import numpy as np
 

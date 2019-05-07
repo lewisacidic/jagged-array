@@ -3,23 +3,21 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-
 """ Jagged array """
-
 from __future__ import annotations
 
 from collections.abc import Iterable
 from functools import partial
-from typing import Optional
 from typing import Any
+from typing import Optional
 
 import numpy as np
 
 from .typing import ArrayLike
-from .typing import DtypeLike
-from .typing import ShapeLike
 from .typing import AxisLike
+from .typing import DtypeLike
 from .typing import Number
+from .typing import ShapeLike
 from .typing import SliceLike
 from .utils import infer_nan
 from .utils import is_float

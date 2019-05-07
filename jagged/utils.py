@@ -3,13 +3,16 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-
 from numbers import Integral
-from typing import Callable, Optional, Any
+from typing import Any
+from typing import Callable
+from typing import Optional
 
 import numpy as np
 
-from .typing import RandomState, DtypeLike, ArrayLike
+from .typing import ArrayLike
+from .typing import DtypeLike
+from .typing import RandomState
 
 
 def random(
