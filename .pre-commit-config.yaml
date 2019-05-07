@@ -1,0 +1,12 @@
+default_language_version: 
+  python: python3.7
+repos:
+- repo: https://github.com/ambv/black
+  rev: 19.3b0
+  hooks:
+  - id: black
+    args: [--safe, --quiet]
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.7.7
+  hooks:
+  - id: flake8
