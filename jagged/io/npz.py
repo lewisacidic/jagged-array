@@ -3,9 +3,15 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
+"""
+jagged.io.npz
+~~~~~~~~~~~~~
+
+Support for the (de-)serialization of jagged-arrays using the numpy `.npz` format.
+"""
 import numpy as np
 
-from ..jagged import JaggedArray
+from ..core import JaggedArray
 from ..typing import FileLike
 
 

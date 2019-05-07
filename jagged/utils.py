@@ -3,6 +3,12 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
+"""
+jagged.utils
+~~~~~~~~~~~~
+
+Utility functions for the jagged-array project.
+"""
 from numbers import Integral
 from typing import Any
 from typing import Callable

@@ -3,7 +3,12 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-""" Jagged array """
+"""
+jagged.core
+~~~~~~~~~~~
+
+Implementation for `JaggedArray`, the core data structure of jagged array.
+"""
 from __future__ import annotations
 
 from collections.abc import Iterable

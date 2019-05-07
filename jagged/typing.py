@@ -3,6 +3,12 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
+"""
+jagged.typing
+~~~~~~~~~~~~~
+
+Types for type hints in jagged-array.
+"""
 from pathlib import Path
 from typing import BinaryIO
 from typing import Iterable
@@ -18,4 +24,6 @@ ArrayLike = Union[np.ndarray, Iterable]
 ShapeLike = Union[np.ndarray, Iterable[int]]
 AxisLike = Union[int, Iterable[int]]
 Number = Union[float, int]
-SliceLike = Union[Ellipsis, slice, int, Iterable[Union[Ellipsis, slice, int, bool]]]
+SliceLike = Union[
+    type(Ellipsis), slice, int, Iterable[Union[type(Ellipsis), slice, int, bool]]
+]
