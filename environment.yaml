@@ -1,16 +1,15 @@
 name: jagged-array
 channels:
-  - conda-forge
   - defaults
+  - conda-forge
 dependencies:
-  - black=19.3b0=py_0
-  - flake8=3.7.7=py37_0
-  - numpy=1.16.3=py37he5ce36f_0
-  - pre_commit=1.15.2=py37_0
-  - pytest=4.4.1=py37_0
-  - pytest-cov=2.6.1=py_0
-  - pytest-flake8=1.0.4=py37_0
-  - python=3.7.3=h5b0a415_0
-  - setuptools=41.0.1=py37_0
+  - black
+  - flake8
+  - numpy
+  - pre_commit
+  - pytest
+  - pytest-cov
+  - pytest-flake8
+  - python>3
 prefix: /home/rich/anaconda3/envs/jagged-array
 
