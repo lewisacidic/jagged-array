@@ -3,6 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
+  - rope
   - black
   - flake8
   - numpy
@@ -11,5 +12,3 @@ dependencies:
   - pytest-cov
   - pytest-flake8
   - python>3
-prefix: /home/rich/anaconda3/envs/jagged-array
-
