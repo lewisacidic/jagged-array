@@ -154,6 +154,33 @@ def full_like(
     return ones(arr.shape, dtype=dtype)
 
 
+def array_equal(x: JaggedArray, y: JaggedArray) -> bool:
+    """ Evaluate whether two jagged arrays are equal.
+
+    Examples:
+        >>> array_equal(
+        ...    JaggedArray(np.arange(8), (3, (3, 2, 3))),
+        ...    JaggedArray(np.arange(8), shapes=[[3], [2], [3]])
+        ... )
+        True
+
+        With same shapes, but different data:
+        >>> array_equal(
+        ...    JaggedArray(np.arange(8), (3, (3, 2, 3))),
+        ...    JaggedArray(np.arange(8, 0, -1), (3, (3, 2, 3))),
+        ... )
+        False
+
+        With same data, but different shapes:
+        >>> array_equal(
+        ...    JaggedArray(np.arange(8), (3, (3, 2, 3))),
+        ...    JaggedArray(np.arange(8), (3, (3, 3, 2))),
+        ... )
+        False
+    """
+    return np.array_equal(x.data, y.data) and x.shape == y.shape
+
+
 def random(
     shape: ArrayLike,
     random_state: Optional[RandomState] = None,
