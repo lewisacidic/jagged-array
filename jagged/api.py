@@ -21,6 +21,7 @@ from .typing import AxisLike
 from .typing import DtypeLike
 from .typing import JaggedShapeLike
 from .typing import RandomState
+from .utils import shape_to_size
 
 
 def zeros(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None):
@@ -34,14 +35,16 @@ def zeros(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None):
             the dtype of the array to produce
 
     Examples:
-        >>> zeros((3, (3, 2, 3)))
-        JaggedArray([0, 0, 0,...], shape=(3, (3, 2, 3)))
+        >>> jagged.zeros((3, (3, 2, 3)))
+        JaggedArray([[0, 0, 0],
+                     [0, 0],
+                     [0, 0, 0]])
 
-        >>> zeros((2, 2, (1, 2)), dtype=bool)
-        JaggedArray([False, False, ...], shape=(2, 2, (1, 2)))
-
+        >>> jagged.zeros((2, 2, (1, 2)), dtype=bool)
+        JaggedArray([[False, False],
+                     [False]])
      """
-    raise NotImplementedError
+    return JaggedArray(np.zeros(shape_to_size(shape), dtype), shape)
 
 
 def zeros_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArray:
@@ -55,11 +58,23 @@ def zeros_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArr
             the dtype of the array to produce.
 
     Examples:
-        >>> zeros_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))
-        JaggedArray([0, 0, ...], shape=(3, (3, 2, 3)))
+        >>> jagged.zeros_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+        JaggedArray([[0, 0, 0],
+                     [0, 0],
+                     [0, 0, 0]])
 
-        >>> zeros_like(JaggedArray(np.arange(22), (4, 2, (1, 2, 1, 2), (3, 1, 4, 1))))
-        JaggedArray([0, 0, ...], shape=(4, 2, (1, 2, 1, 2), (3, 1, 4, 1)))
+        >>> jagged.zeros_like(JaggedArray(np.arange(22), (4, 2, (1, 2, 1, 2))))
+        JaggedArray([[[0],
+                      [0]],
+
+                     [[0, 0],
+                      [0, 0]],
+
+                     [[0],
+                      [0]],
+
+                     [[0, 0],
+                      [0, 0]]])
     """
     return zeros(arr.shape, dtype=dtype)
 
@@ -75,14 +90,16 @@ def ones(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None) -> JaggedArr
             the dtype of the array to produce.
 
     Examples:
-        >>> ones((3, (3, 2, 3)))
-        JaggedArray([1, 1, 1,...], shape=(3, (3, 2, 3)))
+        >>> jagged.ones((3, (3, 2, 3)))
+        JaggedArray([[1, 1, 1],
+                     [1, 1],
+                     [1, 1, 1]])
 
-        >>> ones((2, 2, (1, 2)), dtype=bool)
-        JaggedArray([True, True, ...], shape=(2, 2, (1, 2)))
-
+        >>> jagged.ones((2, 2, (1, 2)), dtype=bool)
+        JaggedArray([[True, True],
+                     [True]])
      """
-    raise NotImplementedError
+    return JaggedArray(np.ones(shape_to_size(shape), dtype), shape)
 
 
 def ones_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArray:
@@ -96,37 +113,53 @@ def ones_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArra
             the dtype of the array to produce.
 
     Examples:
-        >>> ones_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))
-        JaggedArray([1, 1, ...], shape=(3, (3, 2, 3)))
+        >>> jagged.ones_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+        JaggedArray([[1, 1, 1],
+                     [1, 1],
+                     [1, 1, 1]])
 
-        >>> ones_like(JaggedArray(np.arange(22), (4, 2, (1, 2, 1, 2), (3, 1, 4, 1))))
-        JaggedArray([1, 1, ...], shape=(4, 2, (1, 2, 1, 2), (3, 1, 4, 1)))
+        >>> jagged.ones_like(JaggedArray(np.arange(22), (4, 2, (1, 2, 1, 2))))
+        JaggedArray([[[1],
+                      [1]],
+
+                     [[1, 1],
+                      [1, 1]],
+
+                     [[1],
+                      [1]],
+
+                     [[1, 1],
+                      [1, 1]]])
     """
     return ones(arr.shape, dtype=dtype)
 
 
-def full(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None) -> JaggedArray:
+def full(
+    shape: JaggedShapeLike, fill_value, dtype: Optional[DtypeLike] = None
+) -> JaggedArray:
     """ Create a jagged array of a given value in a given jagged shape.
 
     Args:
         shape:
             the shape of the array to produce.
 
-        dtype:
-            the dtype of the array to produce.
-
         fill_value:
             the value with which to fill the array.
 
+        dtype:
+            the dtype of the array to produce.
+
     Examples:
-        >>> ones((3, (3, 2, 3)))
-        JaggedArray([1, 1, 1,...], shape=(3, (3, 2, 3)))
+        >>> jagged.full((3, (3, 2, 3)), 42)
+        JaggedArray([[42, 42, 42],
+                     [42, 42],
+                     [42, 42, 42]])
 
-        >>> ones((2, 2, (1, 2)), dtype=bool)
-        JaggedArray([True, True, ...], shape=(2, 2, (1, 2)))
-
+        >>> jagged.zeros((2, 2, (1, 2)), 3.14, dtype='f4')
+        JaggedArray([[3.14, 3.14],
+                     [3.14]], dtype=float32)
      """
-    raise NotImplementedError
+    return JaggedArray(np.full(shape_to_size(shape), fill_value, dtype), shape)
 
 
 def full_like(
@@ -145,13 +178,25 @@ def full_like(
             the dtype of the array to produce.
 
     Examples:
-        >>> ones_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))
-        JaggedArray([1, 1, ...], shape=(3, (3, 2, 3)))
+        >>> jagged.full_like(JaggedArray(np.arange(8), (3, (3, 2, 3))), 42)
+        JaggedArray([[42, 42, 42],
+                     [42, 42],
+                     [42, 42, 42]])
 
-        >>> ones_like(JaggedArray(np.arange(22), (4, 2, (1, 2, 1, 2), (3, 1, 4, 1))))
-        JaggedArray([1, 1, ...], shape=(4, 2, (1, 2, 1, 2), (3, 1, 4, 1)))
+        >>> jagged.full_like(JaggedArray(np.arange(22), (4, 2, (1, 2, 1, 2))), 42)
+        JaggedArray([[[42],
+                      [42]],
+
+                     [[42, 42],
+                      [42, 42]],
+
+                     [[42],
+                      [42]],
+
+                     [[42, 42],
+                      [42, 42]]])
     """
-    return ones(arr.shape, dtype=dtype)
+    return full(arr.shape, fill_value, dtype=dtype)
 
 
 def array_equal(x: JaggedArray, y: JaggedArray) -> bool:
@@ -199,12 +244,13 @@ def random(
     Examples:
         >>> import jagged
         >>> jagged.random((2, 2, 2), random_state=42)
-        JaggedArray([0.73199394 0.59865848 0.15601864], shape=(2, (1, 2), (1, 1)))
+        JaggedArray([[0.73199394],
+                     [0.59865848, 0.15601864]])
 
         >>> import numpy as np
         >>> rng = np.random.RandomState(42)
         >>> jagged.random((3, 3), random_state=rng, data_rvs=lambda n: rng.randint(0, 10, n))
-        JaggedArray([6, 3, 7, ... 8, 2, 4], shape=(3, (3, 4), 1, (4, 5)))
+        JaggedArray(????)
     """
     raise NotImplementedError
 
@@ -225,7 +271,9 @@ def where(condition: JaggedArray, x: JaggedArray, y: JaggedArray):
         ...     JaggedArray(np.arange(5), shape=(3, (2, 1, 2))),
         ...     JaggedArray(-np.arange(5), shape=(3, (2, 1, 2))),
         ... )
-        JaggedArray([0, -1, 2, -3, 4], shape=(3, (2, 1, 2)))
+        JaggedArray([[ 0, -1],
+                     [ 2],
+                     [-3,  4]])
      """
     raise NotImplementedError
 
@@ -240,23 +288,46 @@ def squeeze(arr: JaggedArray, axis: AxisLike) -> JaggedArray:
             the axes to squeeze.
 
     Examples:
-        >>> squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))))
-        JaggedArray([0, 1, 2...], shape=(3, (3, 2, 3)))
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))))
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
 
         Squeezing multiple axes at once:
 
-        >>> squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3), 1))
-        JaggedArray([0, 1, 2...], shape=(3, (3, 2, 3)))
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3), 1))
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
 
         Squeezing a particular axis:
 
-        >>> squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3), 1)), axis=1)
-        JaggedArray([0, 1, 2...], shape=(3, (3, 2, 3), 1))
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3), 1)), axis=-1)
+        JaggedArray([[[0, 1, 2]],
+
+                     [[3, 4]],
+
+                     [[5, 6, 7]]])
+
+        >>> _.shape
+        (3, 1, (3, 2, 3))
 
         Squeezing multiple particular axes:
 
-        >>> squeeze(JaggedArray(np.arange(7), (3, 1, 1, (3, 2, 3), 1)), axis=(1, 2))
-        JaggedArray([0, 1, 2...], shape=(3, (3, 2, 3), 1))
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, 1, (3, 2, 3), 1)), axis=(1, 2))
+        JaggedArray([[[0],
+                      [1],
+                      [2]],
+
+                     [[3],
+                      [4]],
+
+                     [[5],
+                      [6],
+                      [7]]])
+
+        >>> _.shape
+        (3, (3, 2, 3), 1)
 
         Trying to squeeze an axis with more than one entry:
 
@@ -297,10 +368,23 @@ def expand_dims(arr: JaggedArray, axis: int = -1) -> JaggedArray:
         >>> import jagged
         >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
         >>> jagged.expand_dims(ja, axis=1)
-        JaggedArray([0, 1, 2, ...], shape=(3, 1, (3, 2, 3))
+        JaggedArray([[[0, 1, 2]],
+
+                     [[3, 4]],
+
+                     [[5, 6, 7]]])
 
         >>> jagged.expand_dims(ja, axis=-1)
-        JaggedArray([0, 1, 2, ...], shape=(3, (3, 2, 3), 1)
+        JaggedArray([[[0],
+                      [1],
+                      [2]],
+
+                     [[3],
+                      [4]],
+
+                     [[5],
+                      [6],
+                      [7]]])
 
     See Also:
         JaggedArray.expand_dims: equivalent function as jagged array method
@@ -319,19 +403,27 @@ def concatenate(objs: Iterable[JaggedArray], axis: int = 0) -> JaggedArray:
             The axis along which to concatenate.
 
     Examples:
-        >>> ja = JaggedArray([0, 1, 2,...], shape=(3, (3, 2, 3), (3, 6, 4)))
+        >>> ja = JaggedArray(np.arange(8), shape=(3, (3, 2, 3)))
 
         >>> jagged.concatenate([ja, ja], axis=0)
-        JaggedArray([0, 1, 2,...], shape=(6, (3, 2, 3, 3, 2, 3), (3, 6, 4, 3, 6, 4)))
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7],
+                     [0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
+
+        >>> _.shape
+        (6, (3, 2, 3))
 
         >>> jagged.concatenate([ja, ja], axis=1)
-        JaggedArray([0, 1, 2,...], shape=(3, (6, 4, 6), (3, 6, 4)))
+        JaggedArray([[0, 1, 2, 0, 1, 2],
+                     [3, 4, 3, 4],
+                     [5, 6, 7, 5, 6, 7]])
 
-        >>> jagged.concatenate([ja, ja], axis=2)
-        JaggedArray([0, 1, 2,...], shape=(3, (3, 2, 4), (6, 12, 8)))
+        >>> _.shape
+        (3, (6, 4, 6))
 
-        >>> jagged.concatenate([ja, ja], axis=-1)
-        JaggedArray([0, 1, 2,...], shape=(3, (3, 2, 4), (6, 12, 8)))
     """
     raise NotImplementedError
 
@@ -351,13 +443,35 @@ def stack(objs: Iterable[JaggedArray], axis: Optional[int] = -1) -> JaggedArray:
         inducing dimension.
 
     Examples:
-        >>> ja = JaggedArray(np.arange(33), (3, (3, 2, 3), (3, 6, 4))
+        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3))
 
         >>> jagged.stack([ja, ja])
-        JaggedArray([0, 1, 2, ...], shape=(3, (3, 2, 3), (3, 6, 4), 2))
+        JaggedArray([[[0, 0],
+                      [1, 1],
+                      [2, 2]],
+
+                     [[3, 3],
+                      [4, 4]],
+
+                     [[5, 5],
+                      [6, 6],
+                      [7, 7]]])
+
+        >>> _.shape
+        (3, (3, 2, 3), 2))
 
         >>> jagged.stack([ja, ja], axis=1)
-        JaggedArray([0, 1, 2, ...], shape=(3, (3, 2, 3), (3, 6, 4), 2))
+        JaggedArray([[[0, 1, 2],
+                      [0, 1, 2],
+
+                     [[3, 4],
+                      [3, 4]],
+
+                     [[5, 6, 7],
+                      [5, 6, 7]]])
+
+        >>> _.shape
+        (3, 2, (3, 2, 3))
 
         >>> jagged.stack([ja, ja], axis=0)
         Traceback (most recent call last):
