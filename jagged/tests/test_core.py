@@ -8,11 +8,47 @@ from contextlib import ExitStack as does_not_raise
 
 import numpy as np
 import pytest
+from pytest import raises
 
 import jagged as jgd
+from jagged import JaggedArray
 
 
 dtypes = "f8", "f4", "i8", "i4"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expectation"),
+    [
+        ({"data": [1, 2, 3], "shape": (2, (1, 2))}, does_not_raise()),
+        ({"data": (1, 2, 3), "shape": (2, (1, 2))}, does_not_raise()),
+        ({"data": np.array([1, 2, 3]), "shape": (2, (1, 2))}, does_not_raise()),
+        ({"data": [1, 2, 3], "shape": [2, [1, 2]]}, does_not_raise()),
+        ({"data": [1, 2, 3], "shapes": [[1], [2]]}, does_not_raise()),
+        ({"data": [1, 2, 3], "shapes": np.array([[1], [2]])}, does_not_raise()),
+        ({"data": [1, 2, 3]}, raises(ValueError)),
+        (
+            {"data": [1, 2, 3], "shapes": [[1], [2]], "shape": (2, (1, 2))},
+            raises(ValueError),
+        ),
+    ],
+    ids=[
+        "data as list",
+        "data as tuple",
+        "data as array",
+        "shape as lists",
+        "shapes as lists",
+        "shapes as array",
+        "no shape or shapes",
+        "both shape and shapes",
+    ],
+)
+def test_instantiation(kwargs, expectation):
+    with expectation:
+        ja = JaggedArray(**kwargs)
+        assert isinstance(ja.data, np.ndarray)
+        assert isinstance(ja.shape, tuple)
+        assert ja.shape == (2, (1, 2))
 
 
 @pytest.fixture
@@ -33,6 +69,7 @@ def masked(jagged):
     return jagged.to_masked()
 
 
+@pytest.mark.skip(reason="not yet implemented")
 @pytest.mark.parametrize("dtype", dtypes)
 @pytest.mark.parametrize(
     "reduction,kwargs",
@@ -52,10 +89,10 @@ def masked(jagged):
     "axis,expectation",
     [
         (None, does_not_raise()),
-        (0, pytest.raises(RuntimeError)),
+        (0, raises(RuntimeError)),
         (1, does_not_raise()),
         (2, does_not_raise()),
-        ((0, 1), pytest.raises(RuntimeError)),
+        ((0, 1), raises(RuntimeError)),
         ((1, 2), does_not_raise()),
         (-1, does_not_raise()),
         ((1, -1), does_not_raise()),
