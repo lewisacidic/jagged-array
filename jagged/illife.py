@@ -9,11 +9,22 @@ jagged.illife
 
 Support for converting jagged arrays to and from Illife vectors.
 """
+import numpy as np
+
+from .core import JaggedArray
 
 
-def from_illife(illife):
-    pass
+def from_illife(ivec: np.ndarray):
+    """ Convert an Illife vector to a jagged array. """
+
+    ivec = np.array([np.asarray(arr) for arr in ivec])
+    return JaggedArray(
+        np.concatenate(arr.flatten() for arr in ivec),
+        shapes=np.asarray([arr.shape for arr in ivec]),
+    )
 
 
-def to_illife(illife):
-    pass
+def to_illife(jarray, copy=True):
+    """ Convert a jagged array to an illife vector. """
+
+    return np.array([arr for arr in jarray])
