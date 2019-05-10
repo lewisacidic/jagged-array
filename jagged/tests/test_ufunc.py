@@ -27,6 +27,7 @@ operators_inplace = iadd, isub, imul, itruediv, ifloordiv
 shapes = ((2, 2, 3)), ((3, 2, 3), (2, 4, 2))
 
 
+@pytest.mark.skip(reason="not yet implemented")
 @pytest.mark.parametrize("func", operators)
 @pytest.mark.parametrize("shape", shapes)
 def test_elementwise_binary(func, shape):
@@ -37,6 +38,7 @@ def test_elementwise_binary(func, shape):
     assert_equal(func(xj, yj).to_array(), func(x, y))
 
 
+@pytest.mark.skip(reason="not yet implemented")
 @pytest.mark.parametrize("func", operators_inplace)
 @pytest.mark.parametrize("shape", shapes)
 def test_elementwise_binary_inplace(func, shape):

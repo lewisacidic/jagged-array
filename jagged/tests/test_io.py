@@ -7,12 +7,14 @@
 import numpy as np
 import pytest
 
+from ..api import random
 from ..io.npz import load_npz
 from ..io.npz import save_npz
-from ..utils import random
 
 
-@pytest.mark.parametrize("compressed", [False, True])
+@pytest.mark.parametrize(
+    "compressed", [False, True], ids=["not compressed", "compressed"]
+)
 def test_roundtrip(compressed, tmp_path):
     path = tmp_path / "jagged.npz"
     saved = random(shape=[[20, 20, 20]])

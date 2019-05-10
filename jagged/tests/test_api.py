@@ -3,4 +3,4 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-""" Tests for jagged utilities. """
+""" Tests for jagged api """
