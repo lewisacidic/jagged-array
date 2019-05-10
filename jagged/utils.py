@@ -52,14 +52,23 @@ def is_float(obj: Any) -> bool:
     return isinstance(obj, (float, np.float))
 
 
-def shape_to_shapes(shape):
-    """ Convert a jagged shape to shapes
+def shape_to_shapes(shape: JaggedShapeLike) -> np.ndarray:
+    """ Convert a jagged shape to shapes.
+
+    Args:
+        shape:
+            A jagged shape
 
     Examples:
         >>> shape_to_shapes((3, (1, 3, 2)))
         array([[1],
                [3],
                [2]])
+
+        >>> shape_to_shapes((3, (1, 3, 2), (3, 2, 3)))
+        array([[1, 3],
+               [3, 2],
+               [2, 3]])
 
         >>> shape_to_shapes((3, (3, 1, 1), 2))
         array([[3, 2],
@@ -70,6 +79,9 @@ def shape_to_shapes(shape):
         Traceback (most recent call last):
             ...
         ValueError: invalid shape. Jagged axes must have number of entries equal to length of inducing dim
+
+    See Also:
+        shapes_to_shape: the reverse of this function
     """
 
     inducing, *axs = shape

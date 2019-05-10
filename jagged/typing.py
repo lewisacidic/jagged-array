@@ -22,9 +22,9 @@ RandomState = Union[np.random.RandomState, int]
 DtypeLike = Union[str, np.dtype]
 ArrayLike = Union[np.ndarray, Iterable]
 ShapeLike = Union[np.ndarray, Iterable[int]]
-JaggedShapeLike = Union[np.ndarray, Iterable[int, Iterable[int]]]
+JaggedShapeLike = Union[np.ndarray, Iterable[Union[int, Iterable[int]]]]
 AxisLike = Union[int, Iterable[int]]
 Number = Union[float, int]
-SliceLike = Union[
+IndexLike = Union[
     type(Ellipsis), slice, int, Iterable[Union[type(Ellipsis), slice, int, bool]]
 ]
