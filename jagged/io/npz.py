@@ -11,8 +11,8 @@ Support for the (de-)serialization of jagged-arrays using the numpy `.npz` forma
 """
 import numpy as np
 
-from ..core import JaggedArray
-from ..typing import FileLike
+from .core import JaggedArray
+from .typing import FileLike
 
 
 def save_npz(filename: FileLike, array: JaggedArray, compressed=True) -> None:
@@ -25,25 +25,37 @@ def save_npz(filename: FileLike, array: JaggedArray, compressed=True) -> None:
 
     Examples:
         >>> import jagged
-        >>> arr = jagged.JaggedArray(np.arange(22), [[3, 2, 3], [3, 2, 3]])
+        >>> arr = jagged.JaggedArray(np.arange(22), (3, (3, 2, 3), (3, 2, 3)))
         >>> arr
-        JaggedArray(data=[ 0  1  2 ... 19 20 21],
-            shape=[[3 2 3]
-                   [3 2 3]],
-            dtype=int64)
+        JaggedArray([[[0, 1, 2],
+                      [3, 4, 5]],
+
+                     [[6, 7],
+                      [8, 9]],
+
+                     [[10, 11, 12,
+                       13, 14, 15]]])
+
         >>> jagged.save_npz('jagged.npz', arr)
         >>> loaded = jagged.load_npz('jagged.npz')
         >>> loaded
-        JaggedArray(data=[ 0  1  2 ... 19 20 21],
-            shape=[[3 2 3]
-                   [3 2 3]],
-            dtype=int64)
+        JaggedArray([[[0, 1, 2],
+                      [3, 4, 5]],
+
+                     [[6, 7],
+                      [8, 9]],
+
+                     [[10, 11, 12,
+                       13, 14, 15]]])
+
+        >>> jagged.array_equal(arr, loaded)
+        True
 
     See Also:
         load_npz
     """
 
-    nodes = {"data": array.data, "shape": array.shape}
+    nodes = {"data": array.data, "shapes": array.shapes}
     if compressed:
         np.savez_compressed(filename, **nodes)
     else:
@@ -63,8 +75,8 @@ def load_npz(filename: FileLike) -> JaggedArray:
     with np.load(filename) as f:
         try:
             data = f["data"]
-            shape = f["shape"]
-            return JaggedArray(data, shape)
+            shapes = f["shapes"]
+            return JaggedArray(data, shapes=shapes)
         except KeyError:
             msg = "The file {!r} does not contain a valid jagged array".format(filename)
             raise RuntimeError(msg)
