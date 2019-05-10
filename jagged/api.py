@@ -9,14 +9,15 @@ jagged.api
 
 Top level function for operating on jagged arrays.
 """
-from collections import Iterable
 from typing import Callable
+from typing import Iterable
 from typing import Optional
 
 import numpy as np
 
 from .core import JaggedArray
 from .typing import ArrayLike
+from .typing import AxisLike
 from .typing import DtypeLike
 from .typing import JaggedShapeLike
 from .typing import RandomState
@@ -202,13 +203,13 @@ def where(condition: JaggedArray, x: JaggedArray, y: JaggedArray):
     raise NotImplementedError
 
 
-def squeeze(arr: JaggedArray, axis) -> JaggedArray:
+def squeeze(arr: JaggedArray, axis: AxisLike) -> JaggedArray:
     """ Squeeze the axes of a jagged array.
 
     This removes single dimensional axes from the jagged array.
 
     Args:
-        axis (Iterable | int | None):
+        axis:
             the axes to squeeze.
 
     Examples:
