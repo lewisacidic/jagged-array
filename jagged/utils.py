@@ -127,16 +127,40 @@ def shapes_to_size(shapes: JaggedShapeLike) -> int:
             An array of shapes
 
     Examples:
-        >>> size_from_shape((2, (1, 2)))
+        >>> shapes_to_size(np.array([[1], [2]]))
         3
 
-        >>> size_from_shape((3, (2, 3, 2), 2))
+        >>> shapes_to_size(np.array([[2, 2], [3, 2], [2, 2]]))
         14
 
-        >>> size_from_shape((3, (2, 3, 2), (1, 4, 2)))
+        >>> shapes_to_size(np.array([[2, 1], [3, 4], [2, 2]]))
         18
 
-        >>> size_from_shape((3, 2, (2, 3, 2), (1, 4, 2)))
+        >>> shapes_to_size(np.array([[2, 2, 1], [2, 3, 4], [2, 2, 2]]))
         36
     """
     return shapes.prod(axis=1).sum()
+
+
+def shape_to_size(shape: JaggedShapeLike) -> int:
+    """ Get the number of entries for an array of shapes.
+
+    Args:
+        shape:
+            A jagged shape
+
+    Examples:
+        >>> shape_to_size((2, (1, 2)))
+        3
+
+        >>> shape_to_size((3, (2, 3, 2), 2))
+        14
+
+        >>> shape_to_size((3, (2, 3, 2), (1, 4, 2)))
+        18
+
+        >>> shape_to_size((3, 2, (2, 3, 2), (1, 4, 2)))
+        36
+    """
+
+    return shapes_to_size(shape_to_shapes(shape))
