@@ -11,147 +11,318 @@ Implementation for `JaggedArray`, the core data structure of jagged array.
 """
 from __future__ import annotations
 
-from collections.abc import Iterable
-from functools import partial
 from typing import Any
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 
+from .indexing import getitem
 from .typing import ArrayLike
 from .typing import AxisLike
 from .typing import DtypeLike
 from .typing import Number
 from .typing import ShapeLike
-from .typing import SliceLike
-from .utils import infer_nan
-from .utils import is_float
 
 
-class JaggedArray(object):
-    """ Object supporting arrays with jagged shapes off the zero'th axis. """
+class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
+    """ Object supporting arrays with jagged axes off an inducing axis.
 
-    def __init__(self, data: ArrayLike, shape: ArrayLike):
+    Args:
+        data:
+            The data to be represented flattened as a one dimensional array.
+        shape:
+            The shape of the data.
+
+    Examples:
+        Instantiating a jagged array:
+        >>> JaggedArray(np.arange(8), shape=(3, (3, 2, 3)))
+        JaggedArray(data=[0, 1, ...], shape=(3, (3, 2, 3)))
+
+        Using `shapes`:
+        >>> JaggedArray(np.arange(8), shapes=[[3], [2], [3]])
+        JaggedArray(data=[0, 1, ...], shape=(3, (3, 2, 3)))
+
+        Using an Illife representation:
+        >>> JaggedArray([[0, 1, 2], [3, 4], [5, 6, 7]])
+        JaggedArray(data=[0, 1, ...], shape=(3, (3, 2, 3)))
+
+        Using a masked array:
+        >>> ma = np.masked.maskedarray(np.arange(8),
+        ...                            [[False, False, False],
+        ...                             [False, False,  True],
+        ...                             [False, False, False]])
+        >>> JaggedArray(ma)
+        JaggedArray(data=[0, 1, ...], shape=(3, (3, 2, 3)))
+
+        Higher dimensions:
+        >>> JaggedArray(np.arange(18), shape=(3, (4, 2, 2), (2, 3, 2)))
+        JaggedArray(data=[0, 1, ...], shape=(3, (4, 2, 2), (2, 3, 2)))
+
+        >>> JaggedArray(np.arange(18), shapes=[[4, 2], [2, 3], [2, 2]])
+        JaggedArray(data=[0, 1, ...], shape=(3, (4, 2, 2), (2, 3, 2)))
+     """
+
+    __array_priority__ = 42
+
+    def __init__(self, data: ArrayLike, shape: ArrayLike) -> JaggedArray:
         """ Initialize a jagged array.
 
-        Args:
-            data:
-                The data as a one dimensional array.
-            shape:
-                The shape of the data along the zero'th axis.
-        """
+        Please see `help(JaggedArray)` for more info. """
+        raise NotImplementedError
 
-        self._data = self.__cumsum = self._shape = None
-        self._data = np.array(data)
-        self._shape = np.array(shape)
-        self._verify_integrity()
+    def __getstate__(self):
+        """ returns a tuple to allow easy pickling """
+        raise NotImplementedError
+
+    def __setstate__(self, state):
+        """ initializes class with a state to allow recovery from pickling """
+        raise NotImplementedError
+
+    def __len__(self):
+        """ Get the length of the jagged array.
+
+        This is the size along the inducing dimension.
+
+        Examples:
+            >>> len(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+            3
+
+            >>>len(JaggedArray(np.arange(10), (5, (1, 2, 3, 2, 2))))
+            5
+        """
+        raise NotImplementedError
+
+    def __sizeof__(self):
+        return self.nbytes
+
+    __getitem__ = getitem
+
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+    __repr__ = __str__
 
     @property
     def data(self) -> np.ndarray:
-        """ 1D array storing all entries of the  array. """
-        return self._data
+        """ 1D array storing all entries of the  array.
+
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).data
+            array([0, 1, 2, 3, 4, 5, 6, 7])
+
+            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).data
+            array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+                    17])
+        """
+        raise NotImplementedError
 
     @data.setter
     def data(self, val: ArrayLike):
-        old_data = self.data
-        self._data = val
-        try:
-            self._verify_integrity()
-        except ValueError:
-            self._data = old_data
-            raise
+        raise NotImplementedError
 
     @property
-    def shape(self) -> np.ndarray:
-        """ the shapes of subarrays along the zero'th axis.
+    def shape(self) -> Tuple[int]:
+        """ Tuple of array dimensions.
 
-        dims: (D, m)
-        where D is the number of dimensions and m is the length along the
-        zero'th axis. """
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).shape
+            (3, (3, 2, 3))
 
-        return self._shape
+            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).shape
+            (3, (4, 2, 2), (2, 3, 2))
+
+        See Also:
+            JaggedArray.shapes
+        """
+        raise NotImplementedError
 
     @shape.setter
     def shape(self, val: ShapeLike):
-        val = np.asarray(val)
-        old_shape = self.shape
-        self._shape = val
-        try:
-            self._verify_integrity()
-        except ValueError:
-            self._shape = old_shape
-            raise
+        raise NotImplementedError
 
     @property
-    def sizes(self) -> np.ndarray:
-        """ the sizes of the subarrays along the zero'th axis.
+    def shapes(self) -> np.ndarray:
+        """ The shapes of the arrays along the inducing axis.
 
-        dims: (m)
-        where m is the length along along the zero'th axis.
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).shapes
+            array([[3],
+                   [2],
+                   [3]])
+
+            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).shapes
+            array([[4, 2],
+                   [2, 3],
+                   [2, 2]])
         """
+        raise NotImplementedError
 
-        return self.shape.prod(axis=0)
+    @shapes.setter
+    def shapes(self, value: np.ndarray):
+        raise NotImplementedError
 
     @property
     def size(self) -> int:
-        """ the number of elements in the jagged array. """
+        """ the number of elements in the jagged array.
 
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).size
+            8
+
+            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).size
+            18
+        """
         return self.sizes.sum()
 
     @property
-    def nbytes(self) -> int:
-        """ the number of bytes taken up by the jagged array. """
+    def sizes(self) -> Tuple[int]:
+        """ the sizes of the subarrays along the inducing axis.
 
-        return self.data.nbytes + self.shape.nbytes
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).sizes
+            (3, 2, 3)
+
+            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).sizes
+            (8, 6, 4)
+        """
+        raise NotImplementedError
+
+    @property
+    def nbytes(self) -> int:
+        """ the number of bytes taken up by the jagged array.
+
+        Note:
+            As an implementation detail, this does not factor in cached data.
+
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).nbytes
+            110
+
+            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).nbytes
+            224
+        """
+        raise NotImplementedError
 
     @property
     def ndim(self) -> int:
-        """ the number of dims. """
+        """ the number of dimensions.
 
-        return 1 + len(self.shape)
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).ndim
+            2
+
+            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).ndim
+            3
+        """
+        raise NotImplementedError
 
     @property
-    def dtype(self) -> DtypeLike:
-        """ the dtype of the contained data. """
+    def dtype(self) -> np.dtype:
+        """ the dtype of the contained data.
 
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).dtype
+            dtype('int64')
+
+            >>> JaggedArray(np.arange(8, dtype='f4'), (3, (3, 2, 3))).dtype
+            dtype('float32')
+        """
         return self.data.dtype
 
     @property
     def limits(self) -> np.ndarray:
-        """ the shape of the largest array for each dimension. """
+        """ the shape of the 'convex hull' of the array.
 
-        return np.insert(self.shape.max(axis=1), 0, self.shape.shape[1])
+        This would be the shape of the resultant dense array.
+
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).limits
+            (3, 3)
+
+            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).limits
+            (3, 4, 3)
+
+        See Also:
+            JaggedArray.shape
+        """
+        raise NotImplementedError
 
     @property
-    def _cumsum(self) -> np.ndarray:
-        """ indices into the data along the zero'th axis. """
+    def jagged_axes(self) -> Tuple[bool]:
+        """ The indexes of jagged axes
 
-        if not hasattr(self, "__cumsum"):
-            self.__cumsum = np.insert(np.cumsum(self.sizes), 0, 0)
-        return self.__cumsum
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).jagged_axes
+            (1,)
+
+            >>> JaggedArray(np.arange(16), (3, (3, 2, 3), 2)).jagged_axes
+            (1,)
+         """
+        raise NotImplementedError
+
+    def copy(self) -> JaggedArray:
+        """ copy the jagged array.
+
+        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+        >>> ja2 = ja.copy()
+        >>> jagged.array_equal(ja == ja2)
+        True
+
+        Data is copied:
+        >>> ja2[...] = 42
+        >>> ja2
+        JaggedArray([42, 42, ...], shape=(3, (3, 2, 3)))
+
+        >>> ja
+        JaggedArray([0, 1, ...], shape=(3, (3, 2, 3)))
+        """
+        raise NotImplementedError()
+
+    def astype(self, dtype: DtypeLike) -> JaggedArray:
+        """ a copy of the array with the data as a given data type.
+
+        Args:
+            dtype:
+                the numpy dtype to use to represent data.
+
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).astype('i4')
+            JaggedArray([0, 1, ...], shape=(3, (3, 2, 3)), dtype=int32)
+
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).astype('f2')
+            JaggedArray([0., 1., ...], shape=(3, (3, 2, 3)), dtype=float16)
+        """
+        res = self.copy()
+        res.data = self.data.astype(dtype)
+        return res
 
     @classmethod
-    def from_aoa(cls, arr: np.ndarray) -> JaggedArray:
-        """ Create a jagged array from a numpy array of arrays.
+    def from_illife(cls, arr: ArrayLike) -> JaggedArray:
+        """ Create a jagged array from an Illife vector (array of arrays).
 
         Args:
             arr:
-                Numpy array of arrays to convert.
+                Illife vector to convert.
 
         Examples:
-            >>> arr = np.array([np.array([0, 1, 2]),
-            ...                 np.array([3, 4]),
-            ...                 np.array([5, 6, 7])])
-            >>> JaggedArray.from_aoa(arr)
-            JaggedArray(data=[0 1 2 3 4 5 6 7],
-                        shape=[[3 2 3]],
-                        dtype=int64)
-        """
+            >>> JaggedArray.from_illife([[0, 1, 2],
+            ...                          [3, 4],
+            ...                          [5, 6, 7]])
+            JaggedArray([0, 1, ...], shape=(3, (3, 2, 3)))
 
-        return cls(
-            np.concatenate([sub.flatten() for sub in arr]),
-            np.array([sub.shape for sub in arr]).T,
-        )
+            >>> JaggedArray.from_illife([[[0, 1, 2],
+            ...                           [3, 4, 5]],
+            ...                          [[6, 7]],
+            ...                          [[ 8],
+            ...                           [ 9],
+            ...                           [10]],
+            ...                          [[11]]])
+            JaggedArray([0, 1, ...], shape=(4, (2, 1, 3, 1), (3, 2, 1, 1)))
+        """
+        from .illife import from_illife
+
+        return from_illife(arr)
 
     @classmethod
     def from_masked(cls, arr: np.masked.masked_array) -> JaggedArray:
@@ -171,27 +342,15 @@ class JaggedArray(object):
             ...                                    [False,  True,  True],
             ...                                    [False, False, False]]))
             >>> JaggedArray.from_masked(arr)
-            JaggedArray(data=[0 1 2 3 4 5 6 7 8],
-                        shape=[[3 2 1 3]],
-                        dtype=int64)
+            JaggedArray([0, 1, ...], shape=(4, (3, 2, 1, 3)))
 
         Notes:
             The first masked value in a given direction is assumed to be the
             end of the array.
         """
-        return cls._from_arr_and_mask(arr.compressed(), arr.mask)
+        from .masked import from_masked
 
-    # TODO: add check that mask is jagged (i.e. no holes)
-    @classmethod
-    def _from_arr_and_mask(cls, arr: np.ndarray, mask: np.ndarray) -> JaggedArray:
-        def get_shape(mask, axis=1):
-            res = (~mask).argmin(axis=axis)
-            res = res.max(axis=-1) if res.ndim > 2 else res
-            res[res == 0] = mask.shape[axis]
-            return res
-
-        shapes = np.vstack([get_shape(mask, axis=i) for i in range(1, len(mask.shape))])
-        return cls(arr, shapes)
+        return from_masked(arr)
 
     @classmethod
     def from_array(
@@ -213,102 +372,9 @@ class JaggedArray(object):
             ...                 [     5., np.nan, np.nan],
             ...                 [     6.,     7.,     8.]])
             >>> JaggedArray.from_array(arr).astype(np.int64)
-            JaggedArray(data=[0 1 2 3 4 5 6 7 8],
-                        shape=[[3 2 1 3]],
-                        dtype=int64)
+            JaggedArray([ 0., 1., ...], shape=(4, (3, 2, 1, 3)))
         """
-        if masked_value is None:
-            masked_value = infer_nan(arr.dtype)
-
-        if masked_value == np.nan:
-            mask = np.isnan(arr)
-        else:
-            mask = np.equal(arr, masked_value)
-        return cls._from_arr_and_mask(arr[~mask], mask)
-
-    @classmethod
-    def from_format(cls, arr, format, **kwargs):
-        """ Instantiate a JaggedArray from a jagged format.
-
-        Args:
-            arr:
-                array to convert.
-
-        Keyword Args:
-            are passed onto the initializer.
-
-        Returns:
-            JaggedArray
-        """
-
-        try:
-            return getattr(cls, "from_" + format)(arr, **kwargs)
-        except AttributeError:
-            raise ValueError("{} is not a valid jagged format.".format(format))
-
-    def copy(self) -> JaggedArray:
-        """ copy the jagged array. """
-
-        return self.__class__(self.data.copy(), self.shape.copy())
-
-    def astype(self, dtype: DtypeLike, copy=True) -> JaggedArray:
-        """ the array with the data as a given data type.
-
-        Args:
-            dtype:
-                the numpy dtype to use to represent data.
-            copy:
-                whether to copy the data, or make the change in place.
-
-        """
-        res = self.copy() if copy else self
-        res.data = self.data.astype(dtype)
-        return res
-
-    def _verify_integrity(self):
-        """ Verify that the jagged array is acceptable.
-
-        This checks that:
-            - the data is 1D
-            - the shape is 2D
-            - the number of entries match the sizes of the array.
-
-        Returns:
-            bool
-        """
-        if len(self.data.shape) != 1:
-            raise ValueError(
-                "Data array must be one dimensional "
-                "(is {})".format(len(self.data.shape))
-            )
-
-        if len(self.shape.shape) != 2:
-            raise ValueError(
-                "Shape array must be two dimensional "
-                "(is {})".format(len(self.shape.shape))
-            )
-
-        shape_size, data_size = self._cumsum[-1], self.data.size
-
-        if not shape_size == data_size:
-            raise ValueError(
-                "Size of data ({data_size}) does not match that "
-                "of the given shapes ({shape_size}).".format(
-                    data_size=data_size, shape_size=shape_size
-                )
-            )
-
-    def _mask(self) -> np.ndarray:
-        """ the mask for a dense array for the given shapes. """
-        mask = np.ones(self.limits, dtype=bool)
-        for ax, shape, limit in zip(
-            range(1, len(self.limits)), self.shape, self.limits[1:]
-        ):
-            ax_mask = np.arange(limit) < np.expand_dims(shape, 1)
-            new_shape = np.ones(len(self.limits), dtype=int)
-            new_shape[0], new_shape[ax] = self.limits[0], limit
-            mask = mask & ax_mask.reshape(*new_shape)
-        return mask
+        raise NotImplementedError
 
     def to_masked(self) -> np.mask.masked_array:
         """ convert the array to a dense masked array.
@@ -349,22 +415,20 @@ class JaggedArray(object):
               [False False False False  True  True]]],
                    fill_value = 999999)
         """
-        mask = self._mask()
-        res = np.ma.masked_all(self.limits, dtype=self.dtype)
-        res[mask] = self.data
-        return res
+        from jagged.masked import to_masked
 
-    def to_aoa(self) -> np.ndarray:
-        """ Return a numpy array of arrays.
+        return to_masked(self)
+
+    def to_illife(self) -> np.ndarray:
+        """ Convert the jagged array to an Illife vector.
 
         Examples:
-            >>> JaggedArray(np.arange(8), np.array([[3, 2, 3]])).to_aoa()
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).to_illife()
             array([array([0, 1, 2]),
                    array([3, 4]),
                    array([5, 6, 7])], dtype=object)
 
-            >>> JaggedArray(np.arange(33), np.array([[3, 2, 3],
-            ...                                      [3, 6, 4]])).to_aoa()
+            >>> JaggedArray(np.arange(33), (3, (3, 2, 3), (3, 6, 4))).to_illife()
             array([array([[0, 1, 2],
                           [3, 4, 5],
                           [6, 7, 8]]),
@@ -374,8 +438,9 @@ class JaggedArray(object):
                           [25, 26, 27, 28],
                           [29, 30, 31, 32]])], dtype=object)
         """
-        arr = np.array_split(self.data, self._cumsum[1:])
-        return np.array([res.reshape(*shape) for res, shape in zip(arr, self.shape.T)])
+        from .illife import to_illife
+
+        return to_illife(self)
 
     def to_array(self, fill_value: Optional[Any] = None) -> np.ndarray:
         """ Convert to a dense array.
@@ -385,130 +450,17 @@ class JaggedArray(object):
                 The value to fill in the array.  If `None` (as default) and the
                 array can be converted to floats, we will use `np.nan`.
 
+        Notes:
+            Using np.nan as the `fill_value` will cause a jagged array of integer dtype
+            to be coerced into a float array due to the lack of a numpy nan integer type.
+
         Examples:
-            >>> JaggedArray(np.arange(8), np.array([[3, 2, 3]])).to_array()
+            >>> JaggedArray(np.arange(8),  (3, (3, 2, 3)))).to_array()
             array([array([  0.,   1.,   2.]),
                    array([  3.,   4.,  nan]),
                    array([  5.,   6.,   7.])], dtype=np.float64)
         """
-        if fill_value is None:
-            fill_value = infer_nan(self.dtype)
-
-        tmp = self.astype(float) if is_float(fill_value) else self
-        return tmp.to_masked().filled(fill_value=fill_value)
-
-    def to_format(self, format: str, **kwargs):
-        """ Convert the jagged array to a different format.
-
-        This is a convenience function around `to_masked`, `to_aoa`, etc.
-
-        Args:
-            format:
-                The type of array.
-
-        Returns:
-            JaggedArray | np.array
-        """
-
-        try:
-            return getattr(self, "to_" + format)(**kwargs)
-        except AttributeError:
-            raise ValueError("{} is not a valid jagged format.".format(format))
-
-    asformat = to_format  # consistency with scipy.sparse
-
-    def __eq__(self, other: JaggedArray) -> bool:
-        """ Whether one JaggedArray equals another. """
-
-        return np.array_equal(self.data, other.data) and np.array_equal(
-            self.shape, other.shape
-        )
-
-    @classmethod
-    def from_broadcast(cls, arr: np.ndarray, shape: ShapeLike) -> JaggedArray:
-        return cls(np.repeat(arr, shape.prod(axis=0)), shape)
-
-    def __array__(self, *args, **kwargs):
-        """ Numpy array interface for ufuncs.
-
-        This just gives ufuncs the data to operate on. """
-
-        return self.data
-
-    def __array_wrap__(self, result, **kwargs):
-        """ Numpy array interface for ufuncs.
-
-        This takes the result of a ufunc and rejaggedizes it. """
-
-        return self.__class__(result, self.shape)
-
-    def _unitary_op(self, op):
-        return self.__class__(op(self.data), self.shape)
-
-    def __neg__(self):
-
-        return self._unitary_op(np.negative)
-
-    def _binary_elementwise_op(self, other, op):
-        if isinstance(other, JaggedArray):
-            if not np.array_equal(other.shape, self.shape):
-                raise ValueError(
-                    "operands cound not be broadcast "
-                    "together with shapes {} and "
-                    "{}.".format(self.shape, other.shape)
-                )
-            return self.__class__(op(self.data, other.data), self.shape)
-        else:
-            other = np.asanyarray(other)
-            if other.ndim == 2:
-                # try to broadcast
-                if other.shape[0] != len(self):
-                    raise ValueError(
-                        "operands could not be broadcast "
-                        "together with zero-axis lengths {} and "
-                        "{}.".format(len(self), other.shape[0])
-                    )
-                return self._binary_elementwise_op(
-                    self.from_broadcast(other, self.shape), op
-                )
-            elif other.ndim > 2:
-                raise ValueError(
-                    "Could not broadcast dense array of shape {} "
-                    "to jagged array.".format(other.shape)
-                )
-            # otherwise we have single
-            return self.__class__(op(self.data, other), self.shape)
-
-    def __add__(self, other):
-        """ Add Jagged by a value. """
-
-        return self._binary_elementwise_op(other, np.add)
-
-    def __mul__(self, other):
-        """ Multiply JaggedArray by a value. """
-
-        return self._binary_elementwise_op(other, np.multiply)
-
-    def __truediv__(self, other):
-        """ True divide a JaggedArray by a value. """
-
-        return self._binary_elementwise_op(other, np.true_divide)
-
-    def __floordiv__(self, other):
-
-        return self._binary_elementwise_op(other, np.floor_divide)
-
-    def __sub__(self, other):
-
-        return self._binary_elementwise_op(other, np.subtract)
-
-    def __pow__(self, power, modulo=None):
-        if modulo:
-            raise NotImplementedError("modulo argument not implemented.")
-        return self._binary_elementwise_op(power, np.power)
-
-    def __mod__(self, other):
-        return self._binary_elementwise_op(other, np.mod)
+        raise NotImplementedError
 
     def clip(self, a_min=Optional[Number], a_max=Optional[Number]):
         """ Clip the values of the array.
@@ -522,13 +474,16 @@ class JaggedArray(object):
                 set to this value.
 
         Examples:
-            >>> JaggedArray(np.arange(7), [2, 3, 2]).clip(2, 5)
-            JaggedArray(data=[ 2 2 2 3 4 5 5],
-                        shape=[[2, 3, 2]],
-                        dtype=int64)
-        """
+            >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_min=2)
+            JaggedArray([ 2, 2, 2, 3, 4], shape=(3, (2, 1, 2)))
 
-        return self._unitary_op(partial(np.clip, a_min=a_min, a_max=a_max))
+            >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_max=2)
+            JaggedArray([ 0, 1, 2, 2, 2], shape=(3, (2, 1, 2)))
+
+            >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_min=1, a_max=3)
+            JaggedArray([ 1, 1, 2, 3, 3], shape=(3, (2, 1, 2)))
+        """
+        raise NotImplementedError
 
     def conjugate(self) -> JaggedArray:
         """ Return the element-wise complex conjugate.
@@ -540,168 +495,122 @@ class JaggedArray(object):
             JaggedArray
 
         Examples:
-            >>> JaggedArray([np.complex(0, 1), np.complex(1, 1), np.complex(1, -1)], [[2, 1]]).conjugate()
-            JaggedArray(data=[0.-1.j 1.-1.j 1.+j],
-                        shape=[[2 1]],
-                        dtype=complex128)
+            >>> JaggedArray([1j, 1 + j, 1 - j], (2, (2, 1))).conjugate()
+            JaggedArray([0.-1.j, 1.-1.j, 1.+j], shape=(2, (2, 1)), dtype=complex128)
         """
-        return self._unitary_op(np.conjugate)
+        raise NotImplementedError
 
     conj = conjugate
 
-    def fill(self, value: Any) -> JaggedArray:
-        """ Fill the array with a scalar value.
+    def fill(self, value: Any):
+        """ Fill the jagged array with a scalar value.
 
         Args:
             value (any):
                 All elements of `a` will be assigned this value.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(7), [[3, 2, 3]])
+            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
             >>> ja.fill(0)
             >>> ja
-            JaggedArray(data=[0 0 0 0 0 0 0],
-                        shape=[[3 2 3]],
-                        dtype=int64)
+            JaggedArray([1, 1, 1, ...], shape=(3, (3, 2, 3)))
         """
 
         self.data[...] = value
 
     @property
     def flat(self) -> np.ndarray:
+        """ Return an iterator over the entries of the jagged array.
+
+        Examples:
+            >>> list(JaggedArray(np.arange(8), (3, (3, 2, 3))).flat)
+            [0, 1, 2, 3, 4, 5, 6, 7]
+
+        See also:
+            ndarray.flat
+            numpy.flatiter
+        """
         return self.data.flat
 
     def flatten(self) -> np.ndarray:
-        """ Flatten the array.
+        """ Flatten the jagged array.
 
-        This creates a copy of the data.
+        This creates a **copy** of the data.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(7), [[3, 2, 3]])
+            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
             >>> flattened = ja.flatten()
             >>> flattened
             array([0, 1, 2, 3, 4, 5, 6])
             >>> flattened[...] = 0
             >>> ja
-            JaggedArray(data=[0 0 0 0 0 0 0],
-                        shape=[[3 2 3]],
-                        dtype=int64)
-        """
+            JaggedArray([0, 1, 2,...], shape=(3, (3, 2, 3)))
 
+        See Also:
+            JaggedArray.ravel
+            jagged.flatten
+            jagged.ravel
+        """
         return self.data.copy()
 
     def ravel(self) -> np.ndarray:
         """ Ravel the array.
 
-        Creates a view of the data.
+        Creates a **view** of the data.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(7), [[3, 2, 3]])
+            >>> ja = JaggedArray(np.arange(7), (3, (3, 2, 3)))
             >>> ravelled = ja.ravel()
             >>> ravelled
             array([0, 1, 2, 3, 4, 5, 6])
             >>> ravelled[...] = 0
             >>> ja
-            JaggedArray(data=[0 0 0 0 0 0 0],
-                        shape=[[3 2 3]],
-                        dtype=int64)
-        """
+            JaggedArray([0, 0, 0,...], shape=(3, (3, 2, 3)))
 
+        See Also:
+            JaggedArray.ravel
+            jagged.flatten
+            jagged.ravel
+        """
         return self.data
 
     @property
     def imag(self) -> JaggedArray:
-        """ Get the imaginary part of the array """
+        """ Get the imaginary part of the jagged array.
 
-        return self._unitary_op(np.imag)
+        Examples:
+            >>> JaggedArray([1j, 1 + 1j, 1 - 1j], (2, (2, 1)))
+            JaggedArray([1, 1, -1], shape=(2, (2, 1)))
+        """
+        raise NotImplementedError
 
     @imag.setter
     def imag(self, values):
-        # TODO: broadcasting
-        # TODO: take a jagged array
-        self.data.imag = values
+        raise NotImplementedError
 
     @property
     def real(self):
-        return self._unitary_op(np.real)
+        """ Get the real part of the jagged array.
+
+        Examples:
+            >>> JaggedArray([1j, 1 + 1j, 1 - 1j], (2, (2, 1)))
+            JaggedArray([0, 1, 1], shape=(2, (2, 1)))
+        """
+        raise NotImplementedError
 
     @real.setter
     def real(self, values):
-        # TODO: broadcasting
-        # TODO: take a jagged array
-        self.data.real = values
-
-    def _reduce_op(self, op, axis=None, **kwargs):
-        # easy if axis is none
-        if axis is None:
-            return op(self.data)
-
-        aoa = self.to_aoa()
-
-        axis = np.sort(np.atleast_1d(axis))
-        # then it is applying to all. Will get a dense array.
-        if np.array_equal(axis, np.arange(1, self.ndim)):
-            return np.asarray([op(arr) for arr in aoa])
-
-        if axis[0] == 0:
-            raise ValueError(
-                "reduce operations through the zero'th axis are " "not defined."
-            )
-
-        return JaggedArray.from_aoa(
-            np.array([op(arr, axis=tuple(axis - 1)) for arr in aoa])
-        )
-
-    def all(self, **kwargs):
-        return self._reduce_op(np.all, **kwargs)
-
-    def any(self, **kwargs):
-        return self._reduce_op(np.any, **kwargs)
-
-    def argmax(self, **kwargs):
-        return self._reduce_op(np.argmax, **kwargs)
-
-    def argmin(self, **kwargs):
-        return self._reduce_op(np.argmin, **kwargs)
-
-    def cumprod(self, **kwargs):
-        return self._reduce_op(np.cumprod, **kwargs)
-
-    def cumsum(self, **kwargs):
-        return self._reduce_op(np.cumsum, **kwargs)
-
-    def max(self, **kwargs):
-        return self._reduce_op(np.max, **kwargs)
-
-    def mean(self, **kwargs):
-        return self._reduce_op(np.mean, **kwargs)
-
-    def min(self, **kwargs):
-        return self._reduce_op(np.min, **kwargs)
-
-    def sum(self, **kwargs):
-        return self._reduce_op(np.sum, **kwargs)
-
-    def prod(self, **kwargs):
-        return self._reduce_op(np.prod, **kwargs)
-
-    def ptp(self, **kwargs):
-        return self._reduce_op(np.ptp, **kwargs)
-
-    def put(self, indices, values):
-        raise NotImplementedError("put for a jagged array is not supported.")
-
-    def repeat(self, n):
-        raise NotImplementedError("repeat for a jagged array is not supported.")
+        raise NotImplementedError
 
     def reshape(self, shape: ShapeLike) -> JaggedArray:
-        """ reshape the array
+        """ Reshape the array.
 
         Args:
-            shape: the new shape to add
+            shape:
+                the shape with which to reorient the data.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(8), [[3, 2, 3]])
+            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
             >>> ja.reshape([[2, 3, 3]])
             JaggedArray(data=[0 1 2 3 4 5 6 7],
                         shape=[[2 3 3]],
@@ -709,48 +618,12 @@ class JaggedArray(object):
             >>> ja.reshape([[3, 3, 3]])
             ValueError: total size of new array must be unchanged.
         """
-
-        shape = np.asarray(shape)
-
-        if not np.array_equal(np.prod(shape, axis=0), np.prod(self.shape, axis=0)):
-            raise ValueError("total size of new array must be unchanged.")
-        else:
-            data = np.concatenate(
-                [sub.reshape(shp).flatten() for sub, shp in zip(self.to_aoa(), shape.T)]
-            )
-            new = self[...]
-            new.data = data
-            new.shape = shape
-        return new
+        return NotImplementedError
 
     def resize(self, shape: ShapeLike) -> JaggedArray:
         """ resize the arrays """
 
-        new = self[...]
-        size = np.prod(shape, axis=1).sum()
-        new.data.resize(size)
-        new.shape = shape
-        return new
-
-    def round(self, decimals=0) -> JaggedArray:
-        return self._unitary_op(partial(np.round, decimals=decimals))
-
-    def std(self, **kwargs):
-        return self._reduce_op(np.std, **kwargs)
-
-    def sort(self):
-        raise NotImplementedError("sorting a jagged array is not supported.")
-
-    def take(self, arr):
-        raise NotImplementedError("take is not supported.")
-
-    def var(self, **kwargs):
-        return self._reduce_op(np.var, **kwargs)
-
-    def nonzero(self):
-        top = np.repeat(np.arange(len(self)), self.sizes)[self.data.nonzero()]
-        bot = np.hstack([np.vstack(arr.nonzero()) for arr in self.to_aoa()])
-        return (top,) + tuple(bot)
+        return NotImplementedError
 
     def squeeze(self, axis: Optional[AxisLike] = None):
         """ Squeeze the given axis.
@@ -758,25 +631,27 @@ class JaggedArray(object):
         This will remove axes from shape with only single dimensional entries.
 
         Args:
-            axis (Iterable | int | None):
+            axis:
                 the axes to squeeze.
 
+        See also:
+            :func:`squeeze`: equivalent standalone function
         """
+        from .api import squeeze
 
-        if axis is None:
-            axis = range(self.shape.shape[0])
-        elif axis == -1:
-            axis = self.shape.shape[0]
-        if not isinstance(axis, Iterable):
-            axis = [axis]
-        axis = [ax for ax in axis if (self.shape[ax] == 1).all(axis=0)]
-        self.shape = np.delete(self.shape, axis, axis=0)
-        return self
+        return squeeze()
 
     def expand_dims(self, axis: int = -1) -> JaggedArray:
         """ Expand dimensions.
 
-        See full documenation for :func:`expand_dims`. """
+        Args:
+            axis:
+                the axis after which to insert the dimension
+
+        See also:
+            :func:`expand_dims`: equivalent standalone function
+        """
+        from .api import expand_dims
 
         return expand_dims(self, axis=axis)
 
@@ -792,205 +667,30 @@ class JaggedArray(object):
         """
         return self.__class__(np.digitize(self.data, bins, right=right), self.shape)
 
-    def trace(self):
-        raise NotImplementedError("trace of a jagged array is not implemented")
+    def trace(
+        self,
+        offset: int = 0,
+        axis1: int = 0,
+        axis2: int = 1,
+        dtype: Optional[DtypeLike] = None,
+        out: Optional[np.ndarray] = None,
+    ):
+        """ Return the sum along diagonals of a jagged array.
 
-    def __getitem__(self, item: SliceLike):
-        """ Slice into the zero'th axis. """
+        Args:
+            offset:
+                Offset of the diagonal from the main diagonal. Can be both positive and
+                negative to access upper and lower triangle respectively.
 
-        if item == Ellipsis:
-            return JaggedArray(data=self.data[...], shape=self.shape[...])
-        elif isinstance(item, slice):
-            # slow but works
-            return self.__class__.from_aoa(self.to_aoa()[item])
-        else:
-            return self.data[slice(*self._cumsum[item : item + 2])].reshape(
-                self.shape[:, item]
-            )
+            axis1, axis2:
+                Axes to be used as the first and second axis of the subarrays from
+                which the diagonals should be taken.
 
-    def __len__(self) -> int:
-        """ The length along the zero'th axis. """
+            dtype:
+                The data-type of the returned array.
 
-        return self.shape.shape[1]
+            out:
+                The array in which the output is placed.
+        """
 
-    def __repr__(self) -> str:
-        """ A string representation of the array. """
-
-        thresh = np.get_printoptions()["threshold"]
-        np.set_printoptions(threshold=20)
-        extra_chars = len(self.__class__.__name__)
-        arr_str = "data=" + str(self.data).replace("\n", "\n" + " " * (extra_chars + 6))
-        shape_str = (
-            " " * extra_chars
-            + " shape="
-            + str(self.shape).replace("\n", "\n" + " " * (extra_chars + 7))
-        )
-        dtype_str = " " * extra_chars + " dtype=" + str(self.dtype)
-        np.set_printoptions(threshold=thresh)
-        return "{klass}({data},\n{shape},\n{dtype})".format(
-            klass=self.__class__.__name__,
-            data=arr_str,
-            shape=shape_str,
-            dtype=dtype_str,
-        )
-
-
-def expand_dims(arr: JaggedArray, axis: int = -1) -> JaggedArray:
-    """ Add a dimension.
-
-    Args:
-        axis (int):
-            The axis after which to add the dimension.
-
-    Examples:
-        >>> jarr = JaggedArray(np.arange(8), [[3, 2, 3]]); jarr
-        JaggedArray(data=[0 1 2 3 4 5 6 7],
-                    shape=[[3 2 3]],
-                    dtype=int64)
-
-        >>> expand_dims(jarr, axis=1)
-        JaggedArray(data=[0 1 2 3 4 5 6 7],
-                    shape=[[3 2 3],
-                           [1 1 1]],
-                    dtype=int64)
-
-        >>> expand_dims(jarr, -1)
-        JaggedArray(data=[0 1 2 3 4 5 6 7],
-                    shape=[[3 2 3],
-                           [1 1 1]],
-                    dtype=int64)
-    """
-
-    if axis < 0:
-        axis += arr.ndim
-
-    return arr.reshape(np.insert(arr.shape, axis, np.ones(len(arr), int), axis=0))
-
-
-def collapse_dims(
-    arr: JaggedArray, axis: int = -1, inplace: bool = False
-) -> JaggedArray:
-    """ Collapse a dimension to the lower one.
-
-    Examples:
-        >>> ja = JaggedArray(np.arange(33), np.array([[3, 2, 3],
-        ...                                           [3, 6, 4]]))
-
-        >>> collapse_dims(ja, axis=2)
-        JaggedArray(data=[ 0  1  2 ..., 30 31 32],
-        shape=[[9 12 12]],
-        dtype=int64)
-    """
-
-    assert axis != 0, "cannot collapse the zero'th axis"
-
-    if axis < 0:
-        axis += arr.ndim
-
-    keepdims = np.delete(np.arange(arr.ndim), (axis - 1, axis - 2))
-    newshape = arr.shape[axis - 2] * arr.shape[axis - 1]
-
-    if not keepdims.size:
-        shape = np.expand_dims(newshape, 0)
-    else:
-        shape = np.concatenate([arr.shape[: axis - 2], newshape], axis=1)
-
-    if not inplace:
-        arr = arr.copy()
-    arr.shape = shape
-    return arr
-
-
-def concatenate(objs: Iterable[JaggedArray], axis: int = 0) -> JaggedArray:
-    """ Concatenate data along axes for jagged arrays.
-
-    Args:
-        objs:
-            The jagged arrays to concatenate.
-
-        axis:
-            The axis along which to concatenate.
-
-    Examples:
-        >>> ja = JaggedArray(np.arange(33), np.array([[3, 2, 3],
-        ...                                           [3, 6, 4]]))
-
-        >>> concatenate([ja, ja], axis=0)
-        JaggedArray(data=[ 0  1  2 ..., 30 31 32],
-            shape=[[3 2 3 3 2 3]
-                   [3 6 4 3 6 4]],
-            dtype=int64)
-
-        >>> concatenate([ja, ja], axis=1)
-        JaggedArray(data=[ 0  1  2 ..., 30 31 32],
-                    shape=[[6 4 6]
-                           [3 6 4]],
-                    dtype=int64)
-
-        >>> concatenate([ja, ja], axis=2)
-        JaggedArray(data=[ 0  1  2 ..., 30 31 32],
-            shape=[[ 3  2  3]
-                   [ 6 12  8]],
-            dtype=int64)
-    """
-
-    assert all(
-        isinstance(obj, JaggedArray) for obj in objs
-    ), "all operands must be `JaggedArray`s"
-    assert all(
-        obj.ndim == objs[0].ndim for obj in objs[1:]
-    ), "all operands must be of the same dimensions"
-
-    if len(objs) == 1:
-        return objs[0]
-
-    if axis == 0:
-        data = np.concatenate([obj.data for obj in objs])
-        shape = np.concatenate([obj.shape for obj in objs], axis=1)
-    else:
-        if axis < 0:
-            axis += objs[0].ndim
-        shapes = np.dstack([obj.shape for obj in objs])
-        keepaxes = np.delete(np.arange(objs[0].ndim - 1), axis - 1, axis=0)
-        first_shape = shapes[keepaxes, ..., :1]
-        assert (
-            first_shape == shapes[keepaxes, ..., 1:]
-        ).all(), "all shapes other than the concatenation axis must be equal"
-        shape = shapes[axis - 1].sum(axis=1)
-        shape = np.insert(shapes[keepaxes, :, 0], axis - 1, shape, axis=0)
-        data = [obj.to_aoa() for obj in objs]
-        data = np.hstack(
-            [np.concatenate(subs, axis=axis - 1).flatten() for subs in zip(*data)]
-        )
-    return JaggedArray(data=data, shape=shape)
-
-
-def stack(objs):
-    """ Stack JaggedArrays on a new axis.
-
-    Args:
-        objs (iterable[JaggedArray]):
-            The jagged arrays to stack.
-
-    Returns:
-        JaggedArray
-
-    Examples:
-        >>> ja = JaggedArray(np.arange(33), np.array([[3, 2, 3],
-        ...                                           [3, 6, 4]]))
-
-        >>> stack([ja, ja])
-        JaggedArray(data=[ 0  1  2 ... 30 31 32],
-                    shape=[[6 4 6]
-                           [3 6 4],
-                           [2 2 2]],
-                    dtype=int64)
-    """
-
-    assert all(
-        isinstance(obj, JaggedArray) for obj in objs
-    ), "all operands must be `JaggedArray`s"
-    assert all(
-        np.array_equal(objs[0].shape, other.shape) for other in objs[1:]
-    ), "all shapes must be equal."
-    return concatenate([obj.expand_dims(axis=-1) for obj in objs], axis=-1)
+        raise NotImplementedError()

@@ -14,4 +14,4 @@ Indexing support for jagged arrays.
 def getitem(x, index):
     """ Index a JaggedArray. """
 
-    pass
+    raise NotImplementedError

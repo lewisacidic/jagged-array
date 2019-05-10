@@ -22,42 +22,42 @@ def normalize_index(index: IndexLike, shape: ShapeLike):
         1) convert index to tuple
         2) complete the index to cover all dimensions
         3) replace `None` with full slices
-        3) check the bounding conditions
+        4) check the bounding conditions
     """
 
     pass
 
 
-def complete_index(index: Tuple, n_dims: int) -> Tuple:
-    """ Complete the index with empty slices.
+def expand_index(index: Tuple, n_dims: int) -> Tuple:
+    """ Expand the index with empty slices.
 
     This will expand ellipses if present, or pad at the end if not.
 
     Args:
         index:
-            The index in which to replace ellipses
+            The index to expand
         n_dims:
-            The number of dimensions of the sliced object
+            The number of dimensions of the indexed object
 
     This fills in missing dimensions shown with ellipsis with full slices.
 
     Examples:
-        >>> complete_index((5, 3), 4)
+        >>> expand_index((5, 3), 4)
         (5, 3, slice(None, None, None), slice(None, None, None))
 
-        >>> complete_index((5, Ellipsis, 3), 4)
+        >>> expand_index((5, Ellipsis, 3), 4)
         (5, slice(None, None, None), slice(None, None, None), 3)
 
-        >>> complete_index((5, 3), 2)
+        >>> expand_index((5, 3), 2)
         (5, 3)
 
-        >>> complete_index((Ellipsis,), 2)
+        >>> expand_index((Ellipsis,), 2)
         (slice(None, None, None), slice(None, None, None))
 
-        >>> complete_index((1, None, 2), 2)
+        >>> expand_index((1, None, 2), 2)
         (1, None, 2)
 
-        >>> complete_index((Ellipsis, None), 2)
+        >>> expand_index((Ellipsis, None), 2)
         (slice(None, None, None), slice(None, None, None), None)
     """
 
