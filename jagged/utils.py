@@ -20,6 +20,10 @@ from .typing import JaggedShapeLike
 def infer_nan(dtype: DtypeLike) -> Any:
     """ Infer the nan value for a given dtype
 
+    Notes:
+        As there is not acceptable nan value for integers in numpy, they will be
+        coerced to floats, and so np.nan is returned for an integer dtype.
+
     Examples:
         >>> infer_nan(np.int32)
         nan
@@ -33,11 +37,13 @@ def infer_nan(dtype: DtypeLike) -> Any:
         >>> infer_nan(np.dtype('S4'))
         b'nan'
 
-        >>> infer_nan(np.object_))
+        >>> infer_nan(np.object_)
         nan
     """
-
-    return np.array(np.nan).astype(dtype).item()
+    if np.issubdtype(dtype, np.integer):
+        return np.nan
+    else:
+        return np.array(np.nan).astype(dtype).item()
 
 
 def is_float(obj: Any) -> bool:
