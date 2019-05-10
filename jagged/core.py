@@ -21,8 +21,12 @@ from .indexing import getitem
 from .typing import ArrayLike
 from .typing import AxisLike
 from .typing import DtypeLike
+from .typing import JaggedShapeLike
 from .typing import Number
 from .typing import ShapeLike
+from .utils import shape_to_shapes
+from .utils import shapes_to_shape
+from .utils import shapes_to_size
 
 
 class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
@@ -37,47 +41,101 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
     Examples:
         Instantiating a jagged array:
         >>> JaggedArray(np.arange(8), shape=(3, (3, 2, 3)))
-        JaggedArray(data=[0, 1, ...], shape=(3, (3, 2, 3)))
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
 
         Using `shapes`:
         >>> JaggedArray(np.arange(8), shapes=[[3], [2], [3]])
-        JaggedArray(data=[0, 1, ...], shape=(3, (3, 2, 3)))
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
 
-        Using an Illife representation:
-        >>> JaggedArray([[0, 1, 2], [3, 4], [5, 6, 7]])
-        JaggedArray(data=[0, 1, ...], shape=(3, (3, 2, 3)))
+        Using an Illife vector:
+        >>> JaggedArray.from_illife([[0, 1, 2], [3, 4], [5, 6, 7]])
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
 
         Using a masked array:
         >>> ma = np.masked.maskedarray(np.arange(8),
         ...                            [[False, False, False],
         ...                             [False, False,  True],
         ...                             [False, False, False]])
-        >>> JaggedArray(ma)
-        JaggedArray(data=[0, 1, ...], shape=(3, (3, 2, 3)))
+        >>> JaggedArray.from_masked(ma)
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
 
         Higher dimensions:
-        >>> JaggedArray(np.arange(18), shape=(3, (4, 2, 2), (2, 3, 2)))
-        JaggedArray(data=[0, 1, ...], shape=(3, (4, 2, 2), (2, 3, 2)))
+        >>> JaggedArray(np.arange(18), shape=(3, (2, 2, 4), (2, 3, 2)))
+        JaggedArray([[[ 0,  1],
+                      [ 2,  3]],
+
+                     [[ 4,  5,  6],
+                      [ 7,  8,  9]],
+
+                     [[10, 11],
+                      [12, 13],
+                      [14, 15],
+                      [16, 17]])
 
         >>> JaggedArray(np.arange(18), shapes=[[4, 2], [2, 3], [2, 2]])
-        JaggedArray(data=[0, 1, ...], shape=(3, (4, 2, 2), (2, 3, 2)))
+        JaggedArray([[[ 0,  1],
+                      [ 2,  3]],
+
+                     [[ 4,  5,  6],
+                      [ 7,  8,  9]],
+
+                     [[10, 11],
+                      [12, 13],
+                      [14, 15],
+                      [16, 17]])
      """
 
     __array_priority__ = 42
 
-    def __init__(self, data: ArrayLike, shape: ArrayLike) -> JaggedArray:
+    def __init__(
+        self,
+        data: ArrayLike,
+        shape: Optional[JaggedShapeLike] = None,
+        shapes: Optional[np.ndarray] = None,
+    ) -> JaggedArray:
         """ Initialize a jagged array.
 
         Please see `help(JaggedArray)` for more info. """
-        raise NotImplementedError
+
+        if shape is None:
+            if shapes is None:
+                raise ValueError("Either `shape` or `shapes` must be passed.")
+            else:
+                self.shape = shapes_to_shape(shapes)
+        else:
+            if shapes is None:
+                self.shape = shape
+            else:
+                raise ValueError(
+                    "`shape` and `shapes` cannot be passed simultaneously."
+                )
+
+        self.data = data
+        self._verify_consistency()
+
+    def _verify_consistency(self):
+        """ Check that the data fits the stated size """
+        shape_size = shapes_to_size(self.shapes)
+        if not self.data.size == shape_size:
+            msg = f"Size of data ({self.data.size}) does not match the size of shape ({shape_size})"
+            raise ValueError(msg)
 
     def __getstate__(self):
         """ returns a tuple to allow easy pickling """
-        raise NotImplementedError
+        return self.data.tolist(), self.shape
 
     def __setstate__(self, state):
         """ initializes class with a state to allow recovery from pickling """
-        raise NotImplementedError
+        self.data = state.data
+        self.shape = state.shape
 
     def __len__(self):
         """ Get the length of the jagged array.
@@ -88,10 +146,10 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> len(JaggedArray(np.arange(8), (3, (3, 2, 3))))
             3
 
-            >>>len(JaggedArray(np.arange(10), (5, (1, 2, 3, 2, 2))))
+            >>> len(JaggedArray(np.arange(10), (5, (1, 2, 3, 2, 2))))
             5
         """
-        raise NotImplementedError
+        return self.shape[0]
 
     def __sizeof__(self):
         return self.nbytes
@@ -115,11 +173,14 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
                     17])
         """
-        raise NotImplementedError
+        return self._data
 
     @data.setter
-    def data(self, val: ArrayLike):
-        raise NotImplementedError
+    def data(self, value: ArrayLike):
+        value = np.asarray(value)
+        if value.ndim > 1:
+            raise ValueError(f"`data` must be one dimensional.  Was ({value.ndim}).")
+        self._data = value
 
     @property
     def shape(self) -> Tuple[int]:
@@ -135,11 +196,11 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         See Also:
             JaggedArray.shapes
         """
-        raise NotImplementedError
+        return self._shape
 
     @shape.setter
-    def shape(self, val: ShapeLike):
-        raise NotImplementedError
+    def shape(self, shape: JaggedShapeLike):
+        self._shape = tuple(ax if isinstance(ax, int) else tuple(ax) for ax in shape)
 
     @property
     def shapes(self) -> np.ndarray:
@@ -156,11 +217,11 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                    [2, 3],
                    [2, 2]])
         """
-        raise NotImplementedError
+        return shape_to_shapes(self.shape)
 
     @shapes.setter
     def shapes(self, value: np.ndarray):
-        raise NotImplementedError
+        self.shape = shapes_to_shape(value)
 
     @property
     def size(self) -> int:
@@ -173,7 +234,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).size
             18
         """
-        return self.sizes.sum()
+        return self.data.size
 
     @property
     def sizes(self) -> Tuple[int]:
@@ -186,7 +247,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).sizes
             (8, 6, 4)
         """
-        raise NotImplementedError
+        return self.shapes.prod(axis=1)
 
     @property
     def nbytes(self) -> int:
@@ -215,7 +276,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).ndim
             3
         """
-        raise NotImplementedError
+        return len(self.shape)
 
     @property
     def dtype(self) -> np.dtype:
@@ -246,7 +307,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         See Also:
             JaggedArray.shape
         """
-        raise NotImplementedError
+        return tuple(ax if isinstance(ax, int) else max(ax) for ax in self.shape)
 
     @property
     def jagged_axes(self) -> Tuple[bool]:
@@ -259,25 +320,31 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> JaggedArray(np.arange(16), (3, (3, 2, 3), 2)).jagged_axes
             (1,)
          """
-        raise NotImplementedError
+        return tuple(i for i, ax in enumerate(self.shape) if isinstance(ax, tuple))
 
     def copy(self) -> JaggedArray:
         """ copy the jagged array.
 
-        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
-        >>> ja2 = ja.copy()
-        >>> jagged.array_equal(ja == ja2)
-        True
+        Examples:
+            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja2 = ja.copy()
+            >>> jagged.array_equal(ja == ja2)
+            True
 
-        Data is copied:
-        >>> ja2[...] = 42
-        >>> ja2
-        JaggedArray([42, 42, ...], shape=(3, (3, 2, 3)))
+            Data is copied:
+            >>> ja2[...] = 42
+            >>> ja2
+            JaggedArray([[42, 42, 42],
+                         [42, 42],
+                         [42, 42, 42]])
 
-        >>> ja
-        JaggedArray([0, 1, ...], shape=(3, (3, 2, 3)))
+            >>> ja
+            JaggedArray([[0, 1, 2],
+                         [3, 4],
+                         [5, 6, 7]])
         """
-        raise NotImplementedError()
+        # tuple is immutable, so this is fine to pass without copy
+        return JaggedArray(self.data.copy(), shape=self.shape)
 
     def astype(self, dtype: DtypeLike) -> JaggedArray:
         """ a copy of the array with the data as a given data type.
@@ -288,10 +355,14 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Examples:
             >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).astype('i4')
-            JaggedArray([0, 1, ...], shape=(3, (3, 2, 3)), dtype=int32)
+            JaggedArray([[0, 1, 2],
+                         [3, 4],
+                         [5, 6, 7]], dtype=int32)
 
             >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).astype('f2')
-            JaggedArray([0., 1., ...], shape=(3, (3, 2, 3)), dtype=float16)
+            JaggedArray([[0., 1., 2.],
+                         [3., 4.],
+                         [5., 6., 7.]], dtype=float16)
         """
         res = self.copy()
         res.data = self.data.astype(dtype)
@@ -309,7 +380,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> JaggedArray.from_illife([[0, 1, 2],
             ...                          [3, 4],
             ...                          [5, 6, 7]])
-            JaggedArray([0, 1, ...], shape=(3, (3, 2, 3)))
+            JaggedArray([[0, 1, 2],
+                         [3, 4],
+                         [5, 6, 7]])
 
             >>> JaggedArray.from_illife([[[0, 1, 2],
             ...                           [3, 4, 5]],
@@ -318,7 +391,18 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             ...                           [ 9],
             ...                           [10]],
             ...                          [[11]]])
-            JaggedArray([0, 1, ...], shape=(4, (2, 1, 3, 1), (3, 2, 1, 1)))
+            JaggedArray([[[0, 1, 2],
+                          [3, 4, 5]],
+
+                         [[6, 7]],
+
+                         [[8]],
+
+                         [[9]],
+
+                         [[10]],
+
+                         [[11]]])
         """
         from .illife import from_illife
 
@@ -342,7 +426,10 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             ...                                    [False,  True,  True],
             ...                                    [False, False, False]]))
             >>> JaggedArray.from_masked(arr)
-            JaggedArray([0, 1, ...], shape=(4, (3, 2, 1, 3)))
+            JaggedArray([[0, 1, 2],
+                         [3, 4],
+                         [5],
+                         [6, 7, 8]])
 
         Notes:
             The first masked value in a given direction is assumed to be the
@@ -371,8 +458,11 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             ...                 [     3.,     4., np.nan],
             ...                 [     5., np.nan, np.nan],
             ...                 [     6.,     7.,     8.]])
-            >>> JaggedArray.from_array(arr).astype(np.int64)
-            JaggedArray([ 0., 1., ...], shape=(4, (3, 2, 1, 3)))
+            >>> JaggedArray.from_array(arr).astype(int)
+            JaggedArray([[0, 1, 2],
+                         [3, 4],
+                         [5],
+                         [6, 7, 8]])
         """
         raise NotImplementedError
 
@@ -475,13 +565,19 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Examples:
             >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_min=2)
-            JaggedArray([ 2, 2, 2, 3, 4], shape=(3, (2, 1, 2)))
+            JaggedArray([[2, 2],
+                         [2],
+                         [3, 4]])
 
             >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_max=2)
-            JaggedArray([ 0, 1, 2, 2, 2], shape=(3, (2, 1, 2)))
+            JaggedArray([[0, 1],
+                         [2],
+                         [2, 2]])
 
             >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_min=1, a_max=3)
-            JaggedArray([ 1, 1, 2, 3, 3], shape=(3, (2, 1, 2)))
+            JaggedArray([[1, 1],
+                         [2],
+                         [3, 3]])
         """
         raise NotImplementedError
 
@@ -496,7 +592,8 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Examples:
             >>> JaggedArray([1j, 1 + j, 1 - j], (2, (2, 1))).conjugate()
-            JaggedArray([0.-1.j, 1.-1.j, 1.+j], shape=(2, (2, 1)), dtype=complex128)
+            JaggedArray([[0.-1.j, 1.-1.j],
+                         [1.+j]], dtype=complex128)
         """
         raise NotImplementedError
 
@@ -513,7 +610,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
             >>> ja.fill(0)
             >>> ja
-            JaggedArray([1, 1, 1, ...], shape=(3, (3, 2, 3)))
+            JaggedArray([[0, 0, 0],
+                         [0, 0],
+                         [0, 0, 0]])
         """
 
         self.data[...] = value
@@ -544,7 +643,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             array([0, 1, 2, 3, 4, 5, 6])
             >>> flattened[...] = 0
             >>> ja
-            JaggedArray([0, 1, 2,...], shape=(3, (3, 2, 3)))
+            JaggedArray([[0, 1, 2],
+                         [3, 4],
+                         [5, 6, 7]])
 
         See Also:
             JaggedArray.ravel
@@ -565,7 +666,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             array([0, 1, 2, 3, 4, 5, 6])
             >>> ravelled[...] = 0
             >>> ja
-            JaggedArray([0, 0, 0,...], shape=(3, (3, 2, 3)))
+            JaggedArray([[0, 0, 0],
+                         [0, 0],
+                         [0, 0, 0]])
 
         See Also:
             JaggedArray.ravel
@@ -580,7 +683,8 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Examples:
             >>> JaggedArray([1j, 1 + 1j, 1 - 1j], (2, (2, 1)))
-            JaggedArray([1, 1, -1], shape=(2, (2, 1)))
+            JaggedArray([[1, 1],
+                         [-1]])
         """
         raise NotImplementedError
 
@@ -594,7 +698,8 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Examples:
             >>> JaggedArray([1j, 1 + 1j, 1 - 1j], (2, (2, 1)))
-            JaggedArray([0, 1, 1], shape=(2, (2, 1)))
+            JaggedArray([[0, 1],
+                         [1]])
         """
         raise NotImplementedError
 
@@ -612,9 +717,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         Examples:
             >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
             >>> ja.reshape([[2, 3, 3]])
-            JaggedArray(data=[0 1 2 3 4 5 6 7],
-                        shape=[[2 3 3]],
-                        dtype=int64)
+            JaggedArray([[0, 1],
+                         [2, 3, 4],
+                         [5, 6, 7]])
             >>> ja.reshape([[3, 3, 3]])
             ValueError: total size of new array must be unchanged.
         """
