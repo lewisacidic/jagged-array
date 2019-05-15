@@ -31,6 +31,7 @@ dtypes = "f8", "f4", "i8", "i4"
             {"data": [1, 2, 3], "shapes": [[1], [2]], "shape": (2, (1, 2))},
             raises(ValueError),
         ),
+        ({"data": [[1], [2], [3]], "shape": (2, (1, 2))}, raises(ValueError)),
     ],
     ids=[
         "data as list",
@@ -41,6 +42,7 @@ dtypes = "f8", "f4", "i8", "i4"
         "shapes as array",
         "no shape or shapes",
         "both shape and shapes",
+        "multidimensional data",
     ],
 )
 def test_instantiation(kwargs, expectation):

@@ -17,16 +17,13 @@ from typing import Tuple
 
 import numpy as np
 
-from .indexing import getitem
+from .shape import JaggedShape
 from .typing import ArrayLike
 from .typing import AxisLike
 from .typing import DtypeLike
 from .typing import JaggedShapeLike
 from .typing import Number
 from .typing import ShapeLike
-from .utils import shape_to_shapes
-from .utils import shapes_to_shape
-from .utils import shapes_to_size
 
 
 class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
@@ -109,23 +106,21 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             if shapes is None:
                 raise ValueError("Either `shape` or `shapes` must be passed.")
             else:
-                self.shape = shapes_to_shape(shapes)
+                self.shape = JaggedShape.from_shapes(shapes)
         else:
             if shapes is None:
-                self.shape = shape
+                self.shape = JaggedShape(shape)
             else:
-                raise ValueError(
-                    "`shape` and `shapes` cannot be passed simultaneously."
-                )
-
+                msg = "`shape` and `shapes` cannot be passed simultaneously."
+                raise ValueError(msg)
         self.data = data
         self._verify_consistency()
 
     def _verify_consistency(self):
-        """ Check that the data fits the stated size """
-        shape_size = shapes_to_size(self.shapes)
-        if not self.data.size == shape_size:
-            msg = f"Size of data ({self.data.size}) does not match the size of shape ({shape_size})"
+        """ Check that the data fits the stated size. """
+        dsize, isize = self.data.size, self.shape.size
+        if not dsize == isize:
+            msg = f"Size of data ({dsize}) does not match the size of shape ({isize})"
             raise ValueError(msg)
 
     def __getstate__(self):
@@ -153,8 +148,6 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     def __sizeof__(self):
         return self.nbytes
-
-    __getitem__ = getitem
 
     def __str__(self) -> str:
         raise NotImplementedError
@@ -200,7 +193,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @shape.setter
     def shape(self, shape: JaggedShapeLike):
-        self._shape = tuple(ax if isinstance(ax, int) else tuple(ax) for ax in shape)
+        self._shape = JaggedShape(shape)
 
     @property
     def shapes(self) -> np.ndarray:
@@ -217,11 +210,11 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                    [2, 3],
                    [2, 2]])
         """
-        return shape_to_shapes(self.shape)
+        return self.shape.to_shapes()
 
     @shapes.setter
-    def shapes(self, value: np.ndarray):
-        self.shape = shapes_to_shape(value)
+    def shapes(self, shapes: np.ndarray):
+        self.shape = JaggedShape.from_shapes(shapes)
 
     @property
     def size(self) -> int:
@@ -247,23 +240,23 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).sizes
             (8, 6, 4)
         """
-        return self.shapes.prod(axis=1)
+        return self.shape.sizes
 
     @property
     def nbytes(self) -> int:
         """ the number of bytes taken up by the jagged array.
 
         Note:
-            As an implementation detail, this does not factor in cached data.
+            This does not factor in shape metadata as of now.
 
         Examples:
             >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).nbytes
-            110
+            64
 
             >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).nbytes
-            224
+            144
         """
-        raise NotImplementedError
+        return self.data.nbytes
 
     @property
     def ndim(self) -> int:
@@ -293,8 +286,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @property
     def limits(self) -> np.ndarray:
-        """ the shape of the 'convex hull' of the array.
+        """ the length of the largest subarray along each axis.
 
+        i.e. the shape of the 'convex hull' of the array.
         This would be the shape of the resultant dense array.
 
         Examples:
@@ -307,7 +301,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         See Also:
             JaggedArray.shape
         """
-        return tuple(ax if isinstance(ax, int) else max(ax) for ax in self.shape)
+        return self.shape.limits
 
     @property
     def jagged_axes(self) -> Tuple[bool]:
@@ -319,8 +313,14 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
             >>> JaggedArray(np.arange(16), (3, (3, 2, 3), 2)).jagged_axes
             (1,)
+
+            >>> JaggedArray(np.arange(20), (3, (3, 2, 3), 2, (1, 2, 1))).jagged_axes
+            (1, 3)
+
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3), (1, 1, 1))).jagged_axes
+            (1,)
          """
-        return tuple(i for i, ax in enumerate(self.shape) if isinstance(ax, tuple))
+        return self.shape.jagged_axes
 
     def copy(self) -> JaggedArray:
         """ copy the jagged array.
@@ -343,7 +343,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                          [3, 4],
                          [5, 6, 7]])
         """
-        # tuple is immutable, so this is fine to pass without copy
+        # shape is immutable, so this is fine to pass without copy
         return JaggedArray(self.data.copy(), shape=self.shape)
 
     def astype(self, dtype: DtypeLike) -> JaggedArray:
@@ -364,9 +364,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                          [3., 4.],
                          [5., 6., 7.]], dtype=float16)
         """
-        res = self.copy()
-        res.data = self.data.astype(dtype)
-        return res
+        return JaggedArray(self.data.astype(dtype), self.shape)
 
     @classmethod
     def from_illife(cls, arr: ArrayLike) -> JaggedArray:

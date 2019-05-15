@@ -47,9 +47,129 @@ def infer_nan(dtype: DtypeLike) -> Any:
 
 
 def is_float(obj: Any) -> bool:
-    """ Whether an object is a float. """
+    """ Whether an object is a float.
 
-    return isinstance(obj, (float, np.float))
+    Args:
+        obj:
+            the object to test
+
+    Examples:
+        >>> is_float(0.1)
+        True
+
+        >>> is_float(np.float32(0.1))
+        True
+
+        >>> is_float(1)
+        False
+
+        >>> is_float(np.int64(1))
+        False
+
+        >>> is_float(None)
+        False
+    """
+    return isinstance(obj, (float, np.floating))
+
+
+def is_integer(obj: Any) -> bool:
+    """ Whether an object is an integer.
+
+    Args:
+        obj:
+            the object to test
+
+    Examples:
+        >>> is_integer(1)
+        True
+
+        >>> is_integer(np.int32(1))
+        True
+
+        >>> is_integer(np.int16(1))
+        True
+
+        >>> is_integer(0.1)
+        False
+
+        >>> is_integer(None)
+        False
+    """
+    return isinstance(obj, (int, np.integer))
+
+
+def is_iterable(obj):
+    """ Whether an object is iterable.
+
+    Args:
+        obj:
+            the object to test.
+
+    Examples:
+        >>> is_iterable([1, 2])
+        True
+
+        >>> is_iterable(np.array([1, 2]))
+        True
+
+        >>> is_iterable((1, 2))
+        True
+
+        >>> is_iterable(1)
+        False
+
+        >>> is_iterable(None)
+        False
+    """
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
+
+
+def sanitize_shape(shape):
+    """ Canonicalize a jagged shape
+
+    Args:
+        shape:
+            The shape to canonicalize
+
+    Examples:
+        >>> sanitize_shape((3, (1, 2, 3)))
+        (3, (1, 2, 3))
+
+        >>> sanitize_shape([3, [1, 2, 3]])
+        (3, (1, 2, 3))
+
+        >>> sanitize_shape((3, (1, 1, 1), (1, 2, 3)))
+        (3, 1, (1, 2, 3))
+
+        >>> sanitize_shape((3, (1, 2)))
+        Traceback (most recent call last):
+        ...
+        ValueError: Shape for jagged axes must have entries equal to length of inducing axis.
+    """
+
+    n_inducing = shape[0]
+    res = [n_inducing]
+
+    for i, dim in enumerate(shape[1:]):
+        if is_iterable(dim):
+            if len(dim) != n_inducing:
+                msg = "Shape for jagged axes must have entries equal to length of inducing axis."
+                raise ValueError(msg)
+            elif all(dim[0] == d for d in dim):
+                res.append(int(dim[0]))
+            else:
+                if isinstance(dim, np.ndarray):
+                    dim = tuple(dim.tolist())
+                else:
+                    dim = tuple(int(d) for d in dim)
+                res.append(dim)
+        else:
+            res.append(int(dim))
+    return tuple(res)
 
 
 def shape_to_shapes(shape: JaggedShapeLike) -> np.ndarray:
@@ -115,8 +235,9 @@ def shapes_to_shape(shapes: np.ndarray) -> JaggedShapeLike:
         shape_to_shapes: the reverse of this function
     """
     shapes = np.asarray(shapes)
-    rest = (dim[0] if (dim == dim[0]).all() else tuple(dim) for dim in shapes.T)
-    return (len(shapes), *rest)
+    if not np.issubdtype(shapes.dtype, np.signedinteger):
+        raise ValueError("Shapes must be integers.")
+    return sanitize_shape((len(shapes), *shapes.T))
 
 
 def shapes_to_size(shapes: JaggedShapeLike) -> int:
@@ -164,3 +285,9 @@ def shape_to_size(shape: JaggedShapeLike) -> int:
     """
 
     return shapes_to_size(shape_to_shapes(shape))
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()
