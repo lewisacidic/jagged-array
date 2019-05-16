@@ -509,13 +509,13 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             The first masked value in a given direction is assumed to be the
             end of the array.
         """
-        from .masked import from_masked
+        from .masked import masked_to_jagged
 
-        return from_masked(arr)
+        return masked_to_jagged(arr)
 
     @classmethod
     def from_array(
-        cls, arr: np.ndarray, masked_value: Optional[Any] = None
+        cls, arr: np.ndarray, masked_value: Optional[Any] = np.nan
     ) -> JaggedArray:
         """ Create a jagged array from a (full) array with a masked value.
 
@@ -524,8 +524,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 array to convert.
 
             masked_value:
-                The masked value.  If no value is passed and the array is
-                compatible with float, this will be `nan`, otherwise `None`.
+                The masked value.
 
         Examples:
             >>> arr = np.array([[     0.,     1.,     2.],
@@ -538,7 +537,12 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                          [5],
                          [6, 7, 8]])
         """
-        raise NotImplementedError
+
+        if masked_value is np.nan:
+            masked = np.ma.masked_array(arr, np.isnan(arr))
+        else:
+            masked = np.ma.masked_equal(arr, masked_value)
+        return cls.from_masked(masked)
 
     def to_masked(self) -> np.mask.masked_array:
         """ convert the array to a dense masked array.
@@ -579,9 +583,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
               [False False False False  True  True]]],
                    fill_value = 999999)
         """
-        from jagged.masked import to_masked
+        from jagged.masked import jagged_to_masked
 
-        return to_masked(self)
+        return jagged_to_masked(self)
 
     def to_illife(self) -> np.ndarray:
         """ Convert the jagged array to an Illife vector.

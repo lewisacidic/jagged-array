@@ -11,23 +11,59 @@ Support for converting jagged arrays to and from numpy masked arrays.
 """
 import numpy as np
 
-from jagged.core import JaggedArray
+from .core import JaggedArray
+from .shape import JaggedShape
 
 
-def _mask(arr) -> np.ndarray:
-    """ the mask for a dense array for the given shapes. """
-    mask = np.ones(arr.limits, dtype=bool)
-    for ax, shape, limit in zip(range(1, len(arr.limits)), arr.shape, arr.limits[1:]):
-        ax_mask = np.arange(limit) < np.expand_dims(shape, 1)
-        new_shape = np.ones(len(arr.limits), dtype=int)
-        new_shape[0], new_shape[ax] = arr.limits[0], limit
-        mask = mask & ax_mask.reshape(*new_shape)
+def shape_to_mask(shape: JaggedShape) -> np.ndarray:
+    """ the mask for a dense array for the given jagged shape.
+
+    Args:
+        shape:
+            the jagged shape
+    Examples:
+        >>> shape_to_mask((3, (3, 2, 3)))
+        array([[False, False, False],
+               [False, False,  True],
+               [False, False, False]])
+    """
+    mask = np.ones(shape.limits, dtype=bool)
+    for m, shape in zip(mask, shape.to_shapes()):
+        m[tuple(slice(0, dim) for dim in shape)] = False
     return mask
 
 
-def from_masked(arr: np.ma.masked_array) -> JaggedArray:
-    raise NotImplementedError
+def dims_for_axis(mask: np.ndarray, axis=1) -> np.ndarray:
+    """ get the dims of a jagged shape for a given axis of a boolean mask. """
+    res = (~mask).argmin(axis=axis)
+    res = res.max(axis=tuple(range(1, res.ndim))) if res.ndim >= 2 else res
+    res[res == 0] = mask.shape[axis]
+    return res
 
 
-def to_masked(arr: JaggedArray) -> np.ma.masked_array:
-    raise NotImplementedError
+def mask_to_shape(mask: np.ndarray) -> JaggedShape:
+    """ the jagged shape for a given dense array mask.
+
+    Args:
+        mask:
+            the mask to convert to a jagged shape
+
+    Examples:
+        >>> mask_to_shape([[False, False, False], [False, False, True], [False, False, False]])
+        (3, (3, 2, 3))
+    """
+    return JaggedShape.from_shapes(
+        np.stack([dims_for_axis(mask, axis=i) for i in range(1, mask.ndim)]).T
+    )
+
+
+def masked_to_jagged(arr: np.ma.MaskedArray) -> JaggedArray:
+    """ convert a masked array to a jagged array """
+    return JaggedArray(arr.compressed(), mask_to_shape(arr.mask))
+
+
+def jagged_to_masked(arr: JaggedArray) -> np.ma.MaskedArray:
+    """ convert a jagged array to a masked array """
+    masked = np.ma.masked_all(arr.limits, dtype=arr.dtype)
+    masked[~shape_to_mask(arr.shape)] = arr.data
+    return masked

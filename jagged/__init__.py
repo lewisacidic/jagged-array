@@ -25,6 +25,7 @@ from .api import zeros
 from .api import zeros_like
 from .core import JaggedArray
 from .illife import illife_to_jagged as from_illife
+from .masked import masked_to_jagged as from_masked
 
 __all__ = [
     "JaggedArray",
@@ -43,4 +44,5 @@ __all__ = [
     "diagonal",
     "where",
     "from_illife",
+    "from_masked",
 ]
