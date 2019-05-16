@@ -29,6 +29,7 @@ from ..shape import JaggedShape
         ((3, (1, 2), 1.5), None, raises(ValueError)),
         ((2, 2), (2, 2), warns(Warning)),
         ((2, (2, 2)), (2, 2), warns(Warning)),
+        ((1, (2,)), (1, 2), warns(Warning)),
     ],
     ids=[
         "shape as tuples",
@@ -43,6 +44,7 @@ from ..shape import JaggedShape
         "flat length is float",
         "non-jagged shape",
         "jagged-appearing but not",
+        "inducing length is one",
     ],
 )
 def test_init(shape, desired, expectation):
