@@ -478,9 +478,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
                          [[11]]])
         """
-        from .illife import from_illife
+        from .illife import illife_to_jagged
 
-        return from_illife(arr)
+        return illife_to_jagged(arr)
 
     @classmethod
     def from_masked(cls, arr: np.masked.masked_array) -> JaggedArray:
@@ -602,9 +602,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                           [25, 26, 27, 28],
                           [29, 30, 31, 32]])], dtype=object)
         """
-        from .illife import to_illife
+        from .illife import jagged_to_illife
 
-        return to_illife(self)
+        return jagged_to_illife(self)
 
     def to_array(self, fill_value: Optional[Any] = np.nan) -> np.ndarray:
         """ Convert to a dense array.
