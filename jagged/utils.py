@@ -10,40 +10,13 @@ jagged.utils
 Utility functions for the jagged-array project.
 """
 from typing import Any
+from typing import Dict
+from typing import Optional
+from typing import Union
 
 import numpy as np
 
-from .typing import DtypeLike
 from .typing import JaggedShapeLike
-
-
-def infer_nan(dtype: DtypeLike) -> Any:
-    """ Infer the nan value for a given dtype
-
-    Notes:
-        As there is not acceptable nan value for integers in numpy, they will be
-        coerced to floats, and so np.nan is returned for an integer dtype.
-
-    Examples:
-        >>> infer_nan(np.int32)
-        nan
-
-        >>> infer_nan(np.float64)
-        nan
-
-        >>> infer_nan(np.dtype('U4'))
-        'nan'
-
-        >>> infer_nan(np.dtype('S4'))
-        b'nan'
-
-        >>> infer_nan(np.object_)
-        nan
-    """
-    if np.issubdtype(dtype, np.integer):
-        return np.nan
-    else:
-        return np.array(np.nan).astype(dtype).item()
 
 
 def is_float(obj: Any) -> bool:
@@ -285,6 +258,48 @@ def shape_to_size(shape: JaggedShapeLike) -> int:
     """
 
     return shapes_to_size(shape_to_shapes(shape))
+
+
+def jagged_to_string(
+    jarr,
+    max_line_width: Optional[int] = None,
+    precision: Optional[int] = None,
+    suppress_small: Optional[bool] = None,
+    separator: Optional[str] = "",
+    prefix: Optional[str] = "",
+    suffix: Optional[str] = "",
+    formatter: Optional[Dict[str, callable]] = None,
+    threshold: Optional[int] = None,
+    edgeitems: Optional[int] = None,
+    sign: Optional[str] = None,
+    floatmode: Optional[str] = None,
+    legacy: Optional[Union[str, bool]] = None,
+):
+    """ Return a string representation of a jagged array.
+
+    Args:
+        see `numpy.array2string` for full documentation.
+    """
+
+    delim = separator + "\n" * (len(jarr.shape) - 1)
+    middle = delim.join(
+        (" " * len(prefix) if i > 0 else "")
+        + np.array2string(
+            arr,
+            max_line_width=max_line_width,
+            precision=precision,
+            suppress_small=suppress_small,
+            prefix=prefix,
+            suffix=suffix,
+            separator=separator,
+            formatter=formatter,
+            sign=sign,
+            floatmode=floatmode,
+            legacy=legacy,
+        )
+        for i, arr in enumerate(jarr)
+    )
+    return prefix + middle + suffix
 
 
 if __name__ == "__main__":

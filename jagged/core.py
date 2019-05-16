@@ -24,6 +24,7 @@ from .typing import DtypeLike
 from .typing import JaggedShapeLike
 from .typing import Number
 from .typing import ShapeLike
+from .utils import jagged_to_string
 
 
 class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
@@ -150,9 +151,84 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         return self.nbytes
 
     def __str__(self) -> str:
-        raise NotImplementedError
+        """ Return a string of the jagged array.
 
-    __repr__ = __str__
+        Examples:
+            >>> str(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+            [[0 1 2]
+             [3 4]
+             [5 6 7]]
+
+            >>> str(JaggedArray(np.arange(8), (3, 1, (3, 2, 3))))
+            [[[0 1 2]]
+
+             [[3 4]]
+
+             [[5 6 7]]]
+
+            >>> str(JaggedArray(np.arange(8), (3, (3, 2, 3), 1)))
+            [[[0]
+              [1]
+              [2]]
+
+             [[3]
+              [4]]
+
+             [[5]
+              [6]
+              [7]]]
+        """
+        return jagged_to_string(self, prefix="[", suffix="]")
+
+    def __repr__(self) -> str:
+        """ Return a string for interactive REPL
+
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            JaggedArray([[0, 1, 2],
+                         [3, 4],
+                         [5, 6, 7]])
+
+            >>> JaggedArray(np.arange(8), (3, 1, (3, 2, 3)))
+            JaggedArray([[[0 1 2]],
+
+                         [[3 4]],
+
+                         [[5 6 7]]])
+
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3), 1))
+            JaggedArray([[[0],
+                          [1],
+                          [2]],
+
+                         [[3],
+                          [4]],
+
+                         [[5],
+                          [6],
+                          [7]]])
+
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3)), dtype='f4')
+            JaggedArray([[0, 1, 2],
+                         [3, 4],
+                         [5, 6, 7]], dtype=float32)
+        """
+
+        prefix = self.__class__.__name__ + "(["
+
+        if self.dtype in (np.float64, np.int64):
+            suffix = "])"
+        else:
+            suffix = f"], dtype={str(self.dtype)})"
+
+        return jagged_to_string(self, prefix=prefix, suffix=suffix, separator=", ")
+
+    def __getitem__(self, item):
+        view = self.data.view()
+        cs = np.insert(np.cumsum(self.sizes), 0, 0)
+        view = view[cs[item] : cs[item + 1]]
+        view.shape = self.shapes[item]
+        return view
 
     @property
     def data(self) -> np.ndarray:
