@@ -23,7 +23,35 @@ from .utils import shapes_to_shape
 
 
 class JaggedShape(tuple):
-    """ A jagged shapes. """
+    """ A jagged shape.
+
+    Examples:
+        >>> ja = JaggedShape((3, (1, 2, 3), (2, 2, 2)); ja
+        (3, (1, 2, 3), 2)
+
+        >>> ja = JaggedShape.from_shapes([[1, 2], [2, 2], [3, 2]]); ja
+        (3, (1, 2, 3), 2)
+
+        >>> ja.size
+        12
+
+        >>> ja.sizes
+        (2, 4, 6)
+
+        >>> ja.ndim
+        3
+
+        >>> ja.limits
+        (3, 3, 2)
+
+        >>> ja.jagged_axes
+        (1,)
+
+        >>> ja.to_shapes()
+        array([[1, 2],
+               [2, 2],
+               [3, 2]])
+    """
 
     def __new__(cls, shape: JaggedShapeLike):
         return super(JaggedShape, cls).__new__(cls, sanitize_shape(shape))
