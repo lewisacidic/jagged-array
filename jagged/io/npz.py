@@ -11,8 +11,8 @@ Support for the (de-)serialization of jagged-arrays using the numpy `.npz` forma
 """
 import numpy as np
 
-from .core import JaggedArray
-from .typing import FileLike
+from ..core import JaggedArray
+from ..typing import FileLike
 
 
 def save_npz(filename: FileLike, array: JaggedArray, compressed=True) -> None:

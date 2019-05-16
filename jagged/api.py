@@ -16,6 +16,7 @@ from typing import Optional
 import numpy as np
 
 from .core import JaggedArray
+from .shape import JaggedShape
 from .typing import ArrayLike
 from .typing import AxisLike
 from .typing import DtypeLike
@@ -355,11 +356,11 @@ def squeeze(arr: JaggedArray, axis: AxisLike) -> JaggedArray:
     raise NotImplementedError
 
 
-def expand_dims(arr: JaggedArray, axis: int = -1) -> JaggedArray:
+def expand_dims(jarr: JaggedArray, axis: int = -1) -> JaggedArray:
     """ Add a dimension.
 
     Args:
-        arr:
+        jarr:
             The jagged array which to add the dimension.
         axis:
             The axis after which to add the dimension.
@@ -389,7 +390,12 @@ def expand_dims(arr: JaggedArray, axis: int = -1) -> JaggedArray:
     See Also:
         JaggedArray.expand_dims: equivalent function as jagged array method
     """
-    raise NotImplementedError
+    shape = jarr.shape
+    axis = axis if axis > 0 else len(shape) - axis
+
+    shape = tuple(*shape[:axis], 1, *shape[axis:])
+
+    return jarr.reshape(shape)
 
 
 def concatenate(objs: Iterable[JaggedArray], axis: int = 0) -> JaggedArray:
@@ -505,7 +511,7 @@ def diagonal(arr: JaggedArray, offset: int = 0, axis1: int = 0, axis2: int = 1):
 
 
 def trace(
-    arr: JaggedArray,
+    jarr: JaggedArray,
     offset: int = 0,
     axis1: int = 0,
     axis2: int = 1,
@@ -515,7 +521,7 @@ def trace(
     """ Return the sum along diagonals of a jagged array.
 
     Args:
-        arr:
+        jarr:
             The jagged array from which to fetch the diagonals
 
         offset:
@@ -537,3 +543,116 @@ def trace(
         numpy.trace: equivalent function in numpy
     """
     raise NotImplementedError
+
+
+def resize(jarr: JaggedArray, shape: JaggedShapeLike):
+    """ Resize a jagged array.
+
+    Args:
+        jarr:
+            The jagged array to resize.
+
+        shape:
+            The shape of the resized array
+
+    Notes:
+        This will fill the new array with repeated copies of the array.
+        Not this is different from :meth:`JaggedArray.resize`
+
+    Examples:
+        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+        >>> jagged.resize(ja, (2, (3, 2)))
+        JaggedArray([[0, 1, 2],
+                     [3 ,4]])
+
+        >>> jagged.resize(ja, (3, (3, 4, 3)))
+        JaggedArray([[0, 1, 2],
+                     [3, 4, 5, 6],
+                     [7, 0, 1]])
+
+        >>> ja = JaggedArray(np.arange(3), (2, (1, 2)))
+        >>> jagged.resize(ja, (3, (3, 2, 3)))
+        JaggedArray([[0, 1, 2],
+                     [0, 1],
+                     [2, 0, 1]])
+    """
+    shape = JaggedShape(shape)
+    return JaggedArray(np.resize(jarr.data, shape.size), shape)
+
+
+def flatten(jarr):
+    """ Flatten the jagged array.
+
+    This creates a **copy** of the data.
+
+    Args:
+        The jagged array to flatten.
+
+    Examples:
+        >>> jarr = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+        >>> flattened = jagged.flatten(jarr)
+        >>> flattened
+        array([0, 1, 2, 3, 4, 5, 6, 7])
+
+        >>> flattened[...] = 0
+        >>> jarr
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
+
+    See Also:
+        JaggedArray.ravel
+        JaggedArray.flatten
+        jagged.ravel
+    """
+    return jarr.data.copy()
+
+
+def ravel(jarr):
+    """ Ravel the array.
+
+    Creates a **view** of the data.
+
+    Args:
+        jarr:
+            the jagged array to ravel
+
+    Examples:
+        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+        >>> ravelled = jagged.ravel(ja)
+        >>> ravelled
+        array([0, 1, 2, 3, 4, 5, 6])
+        >>> ravelled[...] = 0
+        >>> ja
+        JaggedArray([[0, 0, 0],
+                     [0, 0],
+                     [0, 0, 0]])
+
+    See Also:
+        JaggedArray.ravel
+        jagged.flatten
+        jagged.ravel
+    """
+    return jarr.data
+
+
+def digitize(jarr, bins: ArrayLike, right: bool = False) -> JaggedArray:
+    """ Return the indices of the bins for each value in array.
+
+    Args:
+        bins:
+            Array of 1-dimensional, monotonic bins.
+
+        right:
+            Whether the intervals include the right or the left bin edge.
+
+    Examples:
+        >>> jagged.digitize(
+        ...     JaggedArray(np.arange(8), shape=(3, (3, 2, 3))),
+        ...     [2, 4, 7]
+        ... )
+        JaggedArray([[0, 0, 1],
+                        [1, 2],
+                        [2, 2, 3]])
+    """
+    return JaggedArray(np.digitize(jarr.data, bins, right=right), jarr.shape)

@@ -606,25 +606,49 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         return to_illife(self)
 
-    def to_array(self, fill_value: Optional[Any] = None) -> np.ndarray:
+    def to_array(self, fill_value: Optional[Any] = np.nan) -> np.ndarray:
         """ Convert to a dense array.
 
         Args:
             fill_value:
-                The value to fill in the array.  If `None` (as default) and the
-                array can be converted to floats, we will use `np.nan`.
+                The value to fill in the array.
 
         Notes:
-            Using np.nan as the `fill_value` will cause a jagged array of integer dtype
-            to be coerced into a float array due to the lack of a numpy nan integer type.
+            Using the default of `np.nan` as the `fill_value` will cause a
+            jagged array of integer dtype to be coerced into a float array
+            due to the lack of a numpy nan integer type.
 
         Examples:
-            >>> JaggedArray(np.arange(8),  (3, (3, 2, 3)))).to_array()
-            array([array([  0.,   1.,   2.]),
-                   array([  3.,   4.,  nan]),
-                   array([  5.,   6.,   7.])], dtype=np.float64)
+            >>> ja = JaggedArray(np.arange(8),  (3, (3, 2, 3))))
+            >>> ja.to_array()
+            array([[ 0.,  1.,  2.],
+                   [ 3.,  4., nan],
+                   [ 5.,  6.,  7.]])
+
+            >>> ja.to_array(-1)
+            array([[ 0,  1,  2],
+                   [ 3,  4, -1],
+                   [ 5,  6,  7]])
+
+            >>> JaggedArray(np.arange(33), np.array([[3, 2, 3],
+            ...                                      [3, 6, 4]])).to_array(-1)
+            array([[[ 0,  1,  2, -1, -1, -1],
+                    [ 3,  4,  5, -1, -1, -1],
+                    [ 6,  7,  8, -1, -1, -1]],
+
+                   [[ 9, 10, 11, 12, 13, 14],
+                    [15, 16, 17, 18, 19, 20],
+                    [-1, -1, -1, -1, -1, -1]],
+
+                   [[21, 22, 23, 24, -1, -1],
+                    [25, 26, 27, 28, -1, -1],
+                    [29, 30, 31, 32, -1, -1]]])
         """
-        raise NotImplementedError
+        masked = self.to_masked()
+        if fill_value is np.nan and np.issubdtype(masked.dtype, np.integer):
+            masked = masked.astype(float)
+
+        return masked.filled(fill_value)
 
     def clip(self, a_min=Optional[Number], a_max=Optional[Number]):
         """ Clip the values of the array.
@@ -653,7 +677,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                          [2],
                          [3, 3]])
         """
-        raise NotImplementedError
+        return JaggedArray(self.data.clip(a_min=a_min, a_max=a_max), self.shape)
 
     def conjugate(self) -> JaggedArray:
         """ Return the element-wise complex conjugate.
@@ -669,7 +693,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             JaggedArray([[0.-1.j, 1.-1.j],
                          [1.+j]], dtype=complex128)
         """
-        raise NotImplementedError
+        return JaggedArray(self.data.conjugate(), self.shape)
 
     conj = conjugate
 
@@ -714,7 +738,8 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
             >>> flattened = ja.flatten()
             >>> flattened
-            array([0, 1, 2, 3, 4, 5, 6])
+            array([0, 1, 2, 3, 4, 5, 6, 7])
+
             >>> flattened[...] = 0
             >>> ja
             JaggedArray([[0, 1, 2],
@@ -726,7 +751,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             jagged.flatten
             jagged.ravel
         """
-        return self.data.copy()
+        from .api import flatten
+
+        return flatten(self)
 
     def ravel(self) -> np.ndarray:
         """ Ravel the array.
@@ -734,7 +761,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         Creates a **view** of the data.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(7), (3, (3, 2, 3)))
+            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
             >>> ravelled = ja.ravel()
             >>> ravelled
             array([0, 1, 2, 3, 4, 5, 6])
@@ -749,7 +776,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             jagged.flatten
             jagged.ravel
         """
-        return self.data
+        from .api import ravel
+
+        return ravel(self)
 
     @property
     def imag(self) -> JaggedArray:
@@ -760,7 +789,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             JaggedArray([[1, 1],
                          [-1]])
         """
-        raise NotImplementedError
+        return JaggedArray(self.data.imag, self.shape)
 
     @imag.setter
     def imag(self, values):
@@ -775,7 +804,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             JaggedArray([[0, 1],
                          [1]])
         """
-        raise NotImplementedError
+        return JaggedArray(self.data.real, self.shape)
 
     @real.setter
     def real(self, values):
@@ -790,19 +819,48 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Examples:
             >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
-            >>> ja.reshape([[2, 3, 3]])
+            >>> ja.reshape((3, (2, 3, 3)))
             JaggedArray([[0, 1],
                          [2, 3, 4],
                          [5, 6, 7]])
-            >>> ja.reshape([[3, 3, 3]])
-            ValueError: total size of new array must be unchanged.
+            >>> ja.reshape((3, (3, 4, 3)))
+            Traceback (most recent call last):
+                ...
+            ValueError: cannot reshape jagged array of size 8 into shape (3, (3, 4, 3)) (size 10).
         """
-        return NotImplementedError
+        shape = JaggedShape(shape)
+        if shape.size != self.size:
+            msg = f"cannot reshape array of size {self.size} into shape {shape} (size {shape.size})"
+            raise ValueError(msg)
+        return JaggedArray(self.data.copy(), shape)
 
     def resize(self, shape: ShapeLike) -> JaggedArray:
-        """ resize the arrays """
+        """ resize a jagged array in place.
 
-        return NotImplementedError
+        If resized shape is larger, pad with zeros, otherwise clip the values.
+
+        Args:
+            shape:
+                the shape of the resized array.
+
+        Examples:
+            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja.resize((2, (3, 2)))
+            >>> ja
+            JaggedArray([[0, 1, 2],
+                         [3, 4]])
+
+            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja.resize((3, (3, 4, 3)))
+            >>> ja
+            JaggedArray([[0, 1, 2],
+                         [3, 4, 5, 6],
+                         [7, 0, 0]])
+        """
+
+        shape = JaggedShape(shape)
+        self.data.resize(shape.size)
+        self.shape = shape
 
     def squeeze(self, axis: Optional[AxisLike] = None):
         """ Squeeze the given axis.
@@ -812,6 +870,66 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         Args:
             axis:
                 the axes to squeeze.
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))))
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
+
+        Squeezing multiple axes at once:
+
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3), 1))
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
+
+        Squeezing a particular axis:
+
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3), 1)), axis=-1)
+        JaggedArray([[[0, 1, 2]],
+
+                     [[3, 4]],
+
+                     [[5, 6, 7]]])
+
+        >>> _.shape
+        (3, 1, (3, 2, 3))
+
+        Squeezing multiple particular axes:
+
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, 1, (3, 2, 3), 1)), axis=(1, 2))
+        JaggedArray([[[0],
+                      [1],
+                      [2]],
+
+                     [[3],
+                      [4]],
+
+                     [[5],
+                      [6],
+                      [7]]])
+
+        >>> _.shape
+        (3, (3, 2, 3), 1)
+
+        Trying to squeeze an axis with more than one entry:
+
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))), axis=2)
+        Traceback (most recent call last):
+            ...
+        ValueError: cannot select an axis to squeeze out which has size not equal to one
+
+        Trying to squeeze the inducing axis:
+
+        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))), axis=0)
+        Traceback (most recent call last):
+            ...
+        ValueError: cannot select an axis to squeeze out which has size not equal to one
+
+        Squeezing the inducing axis when it is only of length one:
+
+        >>> JaggedArray(np.arange(4), (, (1, 2, 2))).squeeze(axis=0)
+        array([[0, 1],
+               [2, 3]])
 
         See also:
             :func:`squeeze`: equivalent standalone function
@@ -827,24 +945,34 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             axis:
                 the axis after which to insert the dimension
 
+        Examples:
+        >>> import jagged
+        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+        >>> ja.expand_dims(axis=1)
+        JaggedArray([[[0, 1, 2]],
+
+                     [[3, 4]],
+
+                     [[5, 6, 7]]])
+
+        >>> ja.expand_dims(axis=-1)
+        JaggedArray([[[0],
+                      [1],
+                      [2]],
+
+                     [[3],
+                      [4]],
+
+                     [[5],
+                      [6],
+                      [7]]])
+
         See also:
             :func:`expand_dims`: equivalent standalone function
         """
         from .api import expand_dims
 
         return expand_dims(self, axis=axis)
-
-    def digitize(self, bins: ArrayLike, right: bool = False) -> JaggedArray:
-        """ Return the indices of the bins for each value in array.
-
-        Args:
-            bins:
-                Array of 1-dimensional, monotonic bins.
-
-            right:
-                Whether the intervals include the right or the left bin edge.
-        """
-        return self.__class__(np.digitize(self.data, bins, right=right), self.shape)
 
     def trace(
         self,
