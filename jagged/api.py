@@ -201,7 +201,62 @@ def full_like(
                      [[42, 42],
                       [42, 42]]])
     """
-    return full(arr.shape, fill_value, dtype=dtype)
+    return full(arr.shape, fill_value, dtype=dtype or arr.dtype)
+
+
+def empty(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None) -> JaggedArray:
+    """ Create an empty jagged array in a given jagged shape.
+
+    Args:
+        shape:
+            the shape of the array to produce.
+
+        dtype:
+            the dtype of the array to produce.
+
+    Examples:
+        >>> jagged.empty((3, (3, 2, 3)))
+        JaggedArray([[0., 0., 0.],
+                     [0., 0.],
+                     [0., 0., 0.]])
+
+        >>> jagged.empty((2, 2, (1, 2)), dtype=bool)
+        JaggedArray([[False, False],
+                     [False]])
+     """
+    return JaggedArray(np.empty(shape_to_size(shape), dtype), shape)
+
+
+def empty_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArray:
+    """ Create an empty jagged array in the shape of another jagged array.
+
+    Args:
+        arr:
+            the jagged array to use as template.
+
+        dtype:
+            the dtype of the array to produce.
+
+    Examples:
+        >>> jagged.empty_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+        JaggedArray([[0., 0, 1],
+                     [1, 1],
+                     [1, 1, 1]])
+
+        >>> jagged.empty_like(JaggedArray(np.arange(22), (4, 2, (1, 2, 1, 2))))
+        JaggedArray([[[1],
+                      [1]],
+
+                     [[1, 1],
+                      [1, 1]],
+
+                     [[1],
+                      [1]],
+
+                     [[1, 1],
+                      [1, 1]]])
+    """
+    return empty(arr.shape, dtype=dtype or arr.dtype)
 
 
 def array_equal(x: JaggedArray, y: JaggedArray) -> bool:
