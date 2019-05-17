@@ -556,7 +556,16 @@ def concatenate(objs: Iterable[JaggedArray], axis: int = 0) -> JaggedArray:
         (3, (6, 4, 6))
 
     """
-    raise NotImplementedError
+    # TODO: optimize
+    if axis == 0:
+        return JaggedArray(
+            np.concatenate([jarr.data for jarr in objs]),
+            shapes=np.concatenate([jarr.shapes for jarr in objs]),
+        )
+    else:
+        return JaggedArray.from_illife(
+            [np.concatenate(arrs, axis=axis - 1) for arrs in zip(*objs)]
+        )
 
 
 def stack(objs: Iterable[JaggedArray], axis: Optional[int] = -1) -> JaggedArray:
