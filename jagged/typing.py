@@ -10,6 +10,7 @@ jagged.typing
 Types for type hints in jagged-array.
 """
 from pathlib import Path
+from typing import Any
 from typing import BinaryIO
 from typing import Iterable
 from typing import TextIO
@@ -28,3 +29,4 @@ Number = Union[float, int]
 IndexLike = Union[
     type(Ellipsis), slice, int, Iterable[Union[type(Ellipsis), slice, int, bool]]
 ]
+IllifeLike = Iterable[Iterable[Union[Iterable, Any]]]
