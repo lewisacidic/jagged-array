@@ -260,6 +260,25 @@ def shape_to_size(shape: JaggedShapeLike) -> int:
     return shapes_to_size(shape_to_shapes(shape))
 
 
+def shape_is_jagged(shape: JaggedShapeLike):
+    """ whether a shape is jagged.
+
+    Args:
+        shape:
+            the shape to check
+
+    >>> shape_is_jagged((3, (3, 2, 3)))
+    True
+
+    >>> shape_is_jagged((3, 3))
+    False
+
+    >>> shape_is_jagged((3, (3, 3, 3)))
+    False
+    """
+    return any(is_iterable(i) for i in sanitize_shape(shape))
+
+
 def jagged_to_string(
     jarr,
     max_line_width: Optional[int] = None,
