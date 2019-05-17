@@ -9,9 +9,11 @@ jagged.api
 
 Top level function for operating on jagged arrays.
 """
+from functools import partial
 from typing import Callable
 from typing import Iterable
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 
@@ -22,6 +24,8 @@ from .typing import AxisLike
 from .typing import DtypeLike
 from .typing import JaggedShapeLike
 from .typing import RandomState
+from .utils import is_integer
+from .utils import shape_is_jagged
 from .utils import shape_to_size
 
 
@@ -229,18 +233,25 @@ def array_equal(x: JaggedArray, y: JaggedArray) -> bool:
 
 def random(
     shape: ArrayLike,
+    jagged_axes: Optional[Tuple[int]] = None,
     random_state: Optional[RandomState] = None,
     data_rvs: Optional[Callable] = None,
+    dtype: DtypeLike = None,
 ):
     """ Generate a random jagged array.
 
     Args:
         shape:
-            if 1D, the maximal bounds of the jagged array, otherwise the shape
+            If a jagged shape, the shape of the resulting jagged array.
+            If a flat shape, the maximal bounds of the jagged array.
+        jagged_axes:
+            The indices of the axes that are to be jagged.
         random_state:
             rng or random seed. If not given, `np.random` will be used.
         data_rvs:
             Data generation callback
+        dtype:
+            The dtype to use.
 
     Examples:
         >>> import jagged
@@ -252,8 +263,67 @@ def random(
         >>> rng = np.random.RandomState(42)
         >>> jagged.random((3, 3), random_state=rng, data_rvs=lambda n: rng.randint(0, 10, n))
         JaggedArray(????)
+
+        >>> jagged.random((3, (3, 2, 3)), random_state=42)
+        JaggedArray([[]])
+
+        >>> jagged.random((3, ))
     """
-    raise NotImplementedError
+
+    if random_state is None:
+        random_state = np.random
+    elif is_integer(random_state):
+        random_state = np.random.RandomState(random_state)
+
+    if data_rvs is None:
+        if np.issubdtype(dtype, np.integer):
+            data_rvs = partial(
+                random_state.randint,
+                np.iinfo(dtype).min,
+                np.iinfo(dtype).max,
+                dtype=dtype,
+            )
+        elif np.issubdtype(dtype, np.complexfloating):
+
+            def data_rvs(n):
+                return random_state.rand(n) + random_state.rand(n) * 1j
+
+        else:
+            data_rvs = random_state.rand
+
+    if not shape_is_jagged(shape):
+        limits, shape = shape, list(shape)
+        # we must choose the shape
+        if limits[0] <= 1:
+            msg = "Cannot create a jagged array with inducing axis of dimension 1."
+            raise ValueError(msg)
+        if np.prod(limits) <= 2:
+            raise ValueError("Cannot create a jagged array with two or less entries.")
+        if jagged_axes is None:
+            # we must choose the jagged axes
+            # there must be at least one, and they can't have limits of dimension 1
+            possibly_jagged = [i for i, ax in enumerate(limits) if ax != 1 and i != 0]
+            if len(possibly_jagged) > 1:
+                n_to_choose = random_state.randint(1, len(possibly_jagged))
+            else:
+                n_to_choose = 1
+
+            jagged_axes = random_state.choice(
+                possibly_jagged, n_to_choose, replace=False
+            )
+        else:
+            if any(limits[ja] == 1 for ja in jagged_axes):
+                raise ValueError("Jagged axes cannot have dimension 1")
+        for ax in jagged_axes:
+            # come up with the jagged shape
+            dim = random_state.randint(1, limits[ax], limits[0]).tolist()
+            if all(d == dim[0] for d in dim):
+                # if all the same value, randomly perturb one value
+                diff = -1 if dim[0] > 1 else +1
+                dim[random_state.randint(0, limits[0])] += diff
+            shape[ax] = dim
+    shape = JaggedShape(shape)
+    return JaggedArray(data_rvs(shape.size), shape)
 
 
 def where(condition: JaggedArray, x: JaggedArray, y: JaggedArray):
