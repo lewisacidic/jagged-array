@@ -512,15 +512,21 @@ def expand_dims(jarr: JaggedArray, axis: int = -1) -> JaggedArray:
                       [6],
                       [7]]])
 
+        >>> jagged.expand_dims(ja, axis=0)
+        Traceback (most recent call last):
+            ...
+        ValueError: cannot replace the jagged inducing dimension
+
     See Also:
         JaggedArray.expand_dims: equivalent function as jagged array method
     """
     shape = jarr.shape
-    axis = axis if axis > 0 else len(shape) - axis
-
-    shape = tuple(*shape[:axis], 1, *shape[axis:])
-
-    return jarr.reshape(shape)
+    if axis == 0:
+        raise ValueError("cannot replace the jagged inducing dimension")
+    else:
+        axis = axis if axis >= 0 else len(shape) - axis
+        shape = (*shape[:axis], 1, *shape[axis:])
+        return jarr.reshape(shape)
 
 
 def concatenate(objs: Iterable[JaggedArray], axis: int = 0) -> JaggedArray:
@@ -619,7 +625,10 @@ def stack(objs: Iterable[JaggedArray], axis: Optional[int] = -1) -> JaggedArray:
         ValueError: cannot stack over the jagged inducing dimension
 
     """
-    raise NotImplementedError
+    if axis == 0:
+        raise ValueError("cannot stack over the jagged inducing dimension")
+    else:
+        return concatenate([expand_dims(jarr, axis=axis) for jarr in objs], axis=axis)
 
 
 def diagonal(arr: JaggedArray, offset: int = 0, axis1: int = 0, axis2: int = 1):
