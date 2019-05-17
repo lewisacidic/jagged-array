@@ -587,8 +587,12 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         return jagged_to_masked(self)
 
-    def to_illife(self) -> np.ndarray:
+    def to_illife(self, copy=False) -> np.ndarray:
         """ Convert the jagged array to an Illife vector.
+
+        Args:
+            copy:
+                Whether to return copies or views of the jagged array.
 
         Examples:
             >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).to_illife()
@@ -608,7 +612,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         """
         from .illife import jagged_to_illife
 
-        return jagged_to_illife(self)
+        return jagged_to_illife(self, copy=copy)
 
     def to_array(self, fill_value: Optional[Any] = np.nan) -> np.ndarray:
         """ Convert to a dense array.
