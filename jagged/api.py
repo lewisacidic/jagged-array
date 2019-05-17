@@ -81,7 +81,7 @@ def zeros_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArr
                      [[0, 0],
                       [0, 0]]])
     """
-    return zeros(arr.shape, dtype=dtype)
+    return zeros(arr.shape, dtype=dtype or arr.dtype)
 
 
 def ones(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None) -> JaggedArray:
@@ -136,7 +136,7 @@ def ones_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArra
                      [[1, 1],
                       [1, 1]]])
     """
-    return ones(arr.shape, dtype=dtype)
+    return ones(arr.shape, dtype=dtype or arr.dtype)
 
 
 def full(
