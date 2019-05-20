@@ -9,13 +9,16 @@ jagged.utils
 
 Utility functions for the jagged-array project.
 """
+from functools import wraps
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import numpy as np
 
+from .typing import AxisLike
 from .typing import JaggedShapeLike
 
 
@@ -324,6 +327,98 @@ def jagged_to_string(
         for i, arr in enumerate(jarr)
     )
     return prefix + middle + suffix
+
+
+def sanitize_axis(axis: AxisLike, ndim: int, multi=True) -> Optional[Tuple[int]]:
+    """ Coerce multiple axes input into cannonical format.
+
+    The canonical format is a tuple of positive integers specifying the axes.
+
+    Args:
+        axis:
+            the axes input to coerce into a canonical format.
+        ndim:
+            the total number of dimensions.
+
+    Examples:
+        >>> sanitize_axis((1, 2), 4)
+        (1, 2)
+
+        >>> sanitize_axis(1, 3)
+        (1,)
+
+        >>> sanitize_axis((0, -1), 3)
+        (0, 2)
+
+        >>> sanitize_axis(-1, 3)
+        (2,)
+
+        >>> sanitize_axis([1, 2], 4)
+        (1, 2)
+
+        >>> sanitize_axis(4, 3)
+        Traceback (most recent call last):
+            ...
+        ValueError: axis 4 is out of bounds for array of dimension 3
+
+        >>> sanitize_axis(-4, 3)
+        Traceback (most recent call last):
+            ...
+        ValueError: axis -4 is out of bounds for array of dimension 3
+
+        >>> sanitize_axis((3, 3), 4)
+        Traceback (most recent call last):
+            ...
+        ValueError: duplicate value in 'axis'
+
+        >>> sanitize_axis((3, -1), 4)
+        Traceback (most recent call last):
+            ...
+        ValueError: duplicate value in 'axis'
+     """
+    if is_integer(axis):
+        # recursive base case
+        if axis >= ndim or -axis >= ndim:
+            msg = f"axis {axis} is out of bounds for array of dimension {ndim}"
+            raise ValueError(msg)
+        else:
+            return (int(axis if axis >= 0 else (ndim + axis)),)
+
+    if not multi:
+        raise ValueError("Only a single axis is permitted")
+
+    axis = sum((sanitize_axis(ax, ndim) for ax in axis), ())
+
+    if len(set(axis)) < len(axis):
+        raise ValueError("duplicate value in 'axis'")
+
+    return axis
+
+
+def with_axis(multi=False, allow_none=True):
+    """ create a decorator which replaces `axis` with a sanitized version.
+
+    This assumes the first argument is the jagged array from which to get the ndim.
+
+    Args:
+        multi:
+            Whether multiple axes are allowed
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def inner(*args, **kwargs):
+            ndim = args[0].ndim
+            axis = kwargs.get("axis", None)
+            if axis is not None:
+                kwargs["axis"] = sanitize_axis(axis, ndim, multi=multi)
+            elif not allow_none:
+                raise ValueError("Axis of value `None` is not permitted.")
+            return func(*args, **kwargs)
+
+        return inner
+
+    return decorator
 
 
 if __name__ == "__main__":

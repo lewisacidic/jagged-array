@@ -27,6 +27,7 @@ from .typing import RandomState
 from .utils import is_integer
 from .utils import shape_is_jagged
 from .utils import shape_to_size
+from .utils import with_axis
 
 
 def zeros(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None):
@@ -400,20 +401,29 @@ def where(condition: JaggedArray, x: JaggedArray, y: JaggedArray):
         JaggedArray([[ 0, -1],
                      [ 2],
                      [-3,  4]])
-     """
-    raise NotImplementedError
+    """
+    # TODO: broadcasting
+    if condition.shape != x.shape != y.shape:
+        raise ValueError("`where` does not yet operate on differently shaped arrays.")
+    return JaggedArray(np.where(condition.data, x.data, y.data), condition.shape)
 
 
-def squeeze(arr: JaggedArray, axis: AxisLike) -> JaggedArray:
+@with_axis(multi=True)
+def squeeze(jarr: JaggedArray, axis: Optional[AxisLike] = None) -> JaggedArray:
     """ Squeeze the axes of a jagged array.
 
     This removes single dimensional axes from the jagged array.
 
     Args:
+        jarr:
+            the jagged array to squeeze.
         axis:
-            the axes to squeeze.
+            the axes of the array to squeeze.
 
     Examples:
+        >>> import numpy as np
+        >>> import jagged
+        >>> from jagged import JaggedArray
         >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))))
         JaggedArray([[0, 1, 2],
                      [3, 4],
@@ -478,7 +488,28 @@ def squeeze(arr: JaggedArray, axis: AxisLike) -> JaggedArray:
     See Also:
         JaggedArray.squeeze: equivalent function as jagged array method
     """
-    raise NotImplementedError
+    if axis is None or 0 in axis:
+        # if we should try to squeeze inducing axis
+        if jarr.shape[0] == 1:
+            # special case that inducing axis can be squeezed
+            return jarr[0].squeeze(None if axis is None else [ax - 1 for ax in axis])
+
+    if axis is None:
+        axis = list(range(jarr.ndim))
+    else:
+        for ax in axis:
+            if ax in jarr.shape.jagged_axes or jarr.shape[ax] > 1:
+                msg = "cannot select an axis to squeeze out which has size not equal to one"
+                raise ValueError(msg)
+
+    shape = JaggedShape(
+        [
+            dim
+            for i, dim in enumerate(jarr.shape)
+            if i in jarr.shape.jagged_axes or i not in axis or dim > 1
+        ]
+    )
+    return JaggedArray(jarr.data, shape)
 
 
 def expand_dims(jarr: JaggedArray, axis: int = -1) -> JaggedArray:
