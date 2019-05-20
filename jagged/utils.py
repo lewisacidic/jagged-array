@@ -299,7 +299,12 @@ def jagged_to_string(
     Args:
         see `numpy.array2string` for full documentation.
     """
-
+    # create a custom formatter for all the data
+    formatter = formatter or {
+        "all": np.core.arrayprint._get_format_function(
+            jarr.data, **np.get_printoptions()
+        )
+    }
     delim = separator + "\n" * (len(jarr.shape) - 1)
     middle = delim.join(
         (" " * len(prefix) if i > 0 else "")
