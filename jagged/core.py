@@ -944,7 +944,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         """
         from .api import squeeze
 
-        return squeeze()
+        return squeeze(self, axis=axis)
 
     def expand_dims(self, axis: int = -1) -> JaggedArray:
         """ Expand dimensions.

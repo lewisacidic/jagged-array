@@ -9,7 +9,7 @@ jagged.utils
 
 Utility functions for the jagged-array project.
 """
-from functools import wraps
+from collections.abc import Iterable
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -81,6 +81,9 @@ def is_iterable(obj):
         obj:
             the object to test.
 
+    Notes:
+        For the purpose of this function, a string is NOT iterable.
+
     Examples:
         >>> is_iterable([1, 2])
         True
@@ -94,14 +97,16 @@ def is_iterable(obj):
         >>> is_iterable(1)
         False
 
+        >>> is_iterable('not iterable')
+        False
+
         >>> is_iterable(None)
         False
     """
-    try:
-        iter(obj)
-        return True
-    except TypeError:
+    if isinstance(obj, str):
         return False
+    else:
+        return isinstance(obj, Iterable)
 
 
 def sanitize_shape(shape):
@@ -337,34 +342,47 @@ def sanitize_axis(axis: AxisLike, ndim: int, multi=True) -> Optional[Tuple[int]]
     Args:
         axis:
             the axes input to coerce into a canonical format.
+
         ndim:
             the total number of dimensions.
 
+        multi:
+            whether multiple axes may be passed.
+
     Examples:
+
+        >>> sanitize_axis(1, 3)
+        1
+
         >>> sanitize_axis((1, 2), 4)
         (1, 2)
 
-        >>> sanitize_axis(1, 3)
-        (1,)
+        >>> sanitize_axis(-1, 3)
+        2
 
         >>> sanitize_axis((0, -1), 3)
         (0, 2)
 
-        >>> sanitize_axis(-1, 3)
-        (2,)
-
         >>> sanitize_axis([1, 2], 4)
         (1, 2)
+
+        >>> sanitize_axis(np.array([1, 2]), 4)
+        (1, 2)
+
+        >>> sanitize_axis((0, 1), 2, multi=False)
+        Traceback (most recent call last):
+            ...
+        ValueEorror: multiple axes are not allowed
 
         >>> sanitize_axis(4, 3)
         Traceback (most recent call last):
             ...
-        ValueError: axis 4 is out of bounds for array of dimension 3
+        ValueError: axis 4 is out of bounds
 
         >>> sanitize_axis(-4, 3)
         Traceback (most recent call last):
             ...
-        ValueError: axis -4 is out of bounds for array of dimension 3
+        ValueError: axis -4 is out of bounds
 
         >>> sanitize_axis((3, 3), 4)
         Traceback (most recent call last):
@@ -375,50 +393,32 @@ def sanitize_axis(axis: AxisLike, ndim: int, multi=True) -> Optional[Tuple[int]]
         Traceback (most recent call last):
             ...
         ValueError: duplicate value in 'axis'
-     """
-    if is_integer(axis):
-        # recursive base case
-        if axis >= ndim or -axis >= ndim:
-            msg = f"axis {axis} is out of bounds for array of dimension {ndim}"
-            raise ValueError(msg)
-        else:
-            return (int(axis if axis >= 0 else (ndim + axis)),)
 
-    if not multi:
-        raise ValueError("Only a single axis is permitted")
-
-    axis = sum((sanitize_axis(ax, ndim) for ax in axis), ())
-
-    if len(set(axis)) < len(axis):
-        raise ValueError("duplicate value in 'axis'")
-
-    return axis
-
-
-def with_axis(multi=False, allow_none=True):
-    """ create a decorator which replaces `axis` with a sanitized version.
-
-    This assumes the first argument is the jagged array from which to get the ndim.
-
-    Args:
-        multi:
-            Whether multiple axes are allowed
+        >>> sanitize_axis('one', 4)
+        Traceback (most recent call last):
+            ...
+        ValueError: 'str' object cannot be interpreted as an integer
     """
 
-    def decorator(func):
-        @wraps(func)
-        def inner(*args, **kwargs):
-            ndim = args[0].ndim
-            axis = kwargs.get("axis", None)
-            if axis is not None:
-                kwargs["axis"] = sanitize_axis(axis, ndim, multi=multi)
-            elif not allow_none:
-                raise ValueError("Axis of value `None` is not permitted.")
-            return func(*args, **kwargs)
+    if axis is None:
+        pass
+    elif is_integer(axis):
+        axis = int(axis)
+        if axis < 0:
+            axis += ndim
+        if not (0 <= axis < ndim):
+            msg = f"axis {axis} is out of bounds"
+            raise ValueError(msg)
+    elif is_iterable(axis):
+        if not multi:
+            raise ValueError("multiple axes are not allowed")
+        axis = tuple(sanitize_axis(ax, ndim) for ax in axis)
+        if len(set(axis)) < len(axis):
+            raise ValueError("duplicate value in 'axis'")
+    else:
+        raise ValueError(f"'{type(axis)} object cannot be interpreted as an integer")
 
-        return inner
-
-    return decorator
+    return axis
 
 
 if __name__ == "__main__":

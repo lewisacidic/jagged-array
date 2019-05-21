@@ -25,9 +25,9 @@ from .typing import DtypeLike
 from .typing import JaggedShapeLike
 from .typing import RandomState
 from .utils import is_integer
+from .utils import sanitize_axis
 from .utils import shape_is_jagged
 from .utils import shape_to_size
-from .utils import with_axis
 
 
 def zeros(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None):
@@ -408,7 +408,6 @@ def where(condition: JaggedArray, x: JaggedArray, y: JaggedArray):
     return JaggedArray(np.where(condition.data, x.data, y.data), condition.shape)
 
 
-@with_axis(multi=True)
 def squeeze(jarr: JaggedArray, axis: Optional[AxisLike] = None) -> JaggedArray:
     """ Squeeze the axes of a jagged array.
 
@@ -467,32 +466,45 @@ def squeeze(jarr: JaggedArray, axis: Optional[AxisLike] = None) -> JaggedArray:
 
         Trying to squeeze an axis with more than one entry:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))), axis=2)
+        >>> jagged.squeeze(JaggedArray(np.arange(8), (3, 1, (3, 2, 3))), axis=2)
         Traceback (most recent call last):
             ...
         ValueError: cannot select an axis to squeeze out which has size not equal to one
 
         Trying to squeeze the inducing axis:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))), axis=0)
+        >>> jagged.squeeze(JaggedArray(np.arange(8), (3, 1, (3, 2, 3))), axis=0)
         Traceback (most recent call last):
             ...
         ValueError: cannot select an axis to squeeze out which has size not equal to one
 
         Squeezing the inducing axis when it is only of length one:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(4), (1, 2, 2)), axis=0)
+        >>> import warnings
+        >>> with warnings.catch_warnings():
+        ...    warnings.simplefilter("ignore")
+        ...    ja = JaggedArray(np.arange(4), (1, 2, 2))
+        >>> jagged.squeeze(ja, axis=0)
         array([[0, 1],
                [2, 3]])
 
     See Also:
         JaggedArray.squeeze: equivalent function as jagged array method
     """
+    axis = sanitize_axis(axis, jarr.ndim)
+    if is_integer(axis):
+        axis = (axis,)
+
     if axis is None or 0 in axis:
-        # if we should try to squeeze inducing axis
+        # we should try to squeeze the inducing axis
         if jarr.shape[0] == 1:
             # special case that inducing axis can be squeezed
-            return jarr[0].squeeze(None if axis is None else [ax - 1 for ax in axis])
+            if axis not in (None, (0,)):
+                # we have to adapt the axis down
+                axis = tuple(ax - 1 for ax in axis if ax != 0)
+            else:
+                axis = None
+            return np.squeeze(jarr[0], axis)
 
     if axis is None:
         axis = list(range(jarr.ndim))
