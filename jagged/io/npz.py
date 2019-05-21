@@ -74,9 +74,7 @@ def load_npz(filename: FileLike) -> JaggedArray:
 
     with np.load(filename) as f:
         try:
-            data = f["data"]
-            shapes = f["shapes"]
-            return JaggedArray(data, shapes=shapes)
+            return JaggedArray(f["data"], shapes=f["shapes"])
         except KeyError:
             msg = "The file {!r} does not contain a valid jagged array".format(filename)
             raise RuntimeError(msg)

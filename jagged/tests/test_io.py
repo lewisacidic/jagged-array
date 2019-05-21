@@ -10,6 +10,7 @@ import pytest
 from ..api import random
 from ..io.npz import load_npz
 from ..io.npz import save_npz
+from .utils import assert_equal
 
 
 @pytest.mark.parametrize(
@@ -17,10 +18,10 @@ from ..io.npz import save_npz
 )
 def test_roundtrip(compressed, tmp_path):
     path = tmp_path / "jagged.npz"
-    saved = random(shape=[[20, 20, 20]])
+    saved = random(shape=(20, 20, 20))
     save_npz(path, saved, compressed=compressed)
     loaded = load_npz(path)
-    assert saved == loaded
+    assert_equal(saved, loaded)
 
 
 def test_wrong_format(tmp_path):
