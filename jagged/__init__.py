@@ -9,14 +9,21 @@ jagged
 
 Jagged array support for the pydata ecosystem.
 """
+from .api import array_equal
 from .api import concatenate
 from .api import diagonal
+from .api import digitize
+from .api import empty
+from .api import empty_like
 from .api import expand_dims
+from .api import flatten
 from .api import full
 from .api import full_like
 from .api import ones
 from .api import ones_like
 from .api import random
+from .api import ravel
+from .api import resize
 from .api import squeeze
 from .api import stack
 from .api import trace
@@ -29,20 +36,28 @@ from .masked import masked_to_jagged as from_masked
 
 __all__ = [
     "JaggedArray",
-    "random",
     "concatenate",
-    "squeeze",
+    "diagonal",
     "expand_dims",
-    "zeros",
-    "zeros_like",
-    "ones",
-    "ones_like",
+    "flatten",
     "full",
     "full_like",
+    "ones",
+    "ones_like",
+    "empty",
+    "empty_like",
+    "digitize",
+    "array_equal",
+    "random",
+    "ravel",
+    "resize",
+    "squeeze",
     "stack",
     "trace",
-    "diagonal",
     "where",
+    "zeros",
+    "zeros_like",
+    "JaggedArray",
     "from_illife",
     "from_masked",
 ]
