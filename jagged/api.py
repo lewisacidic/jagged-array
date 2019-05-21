@@ -314,6 +314,31 @@ def array_equal(x: JaggedArray, y: JaggedArray) -> bool:
     return np.array_equal(x.data, y.data) and x.shape == y.shape
 
 
+def allclose(
+    x: JaggedArray,
+    y: JaggedArray,
+    rtol: float = 1e-05,
+    atol: float = 1e-08,
+    equal_nan: bool = False,
+):
+    """ Whether two jagged arrays are element-wise equal withing a given tolerance.
+
+    Args:
+        jarr{1,2}:
+            The arrays between which to test the closeness
+
+        rtol:
+            The relative tolerance
+
+        atol:
+            The absolute tolerance
+
+        equal_nan:
+            Whether to compare NaNs as equal
+    """
+    return np.allclose(x.data, y.data)
+
+
 def random(
     shape: ArrayLike,
     jagged_axes: Optional[Tuple[int]] = None,
