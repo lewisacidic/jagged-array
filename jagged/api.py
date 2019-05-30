@@ -440,7 +440,7 @@ def random(
                 raise ValueError("Jagged axes cannot have dimension 1")
         for ax in jagged_axes:
             # come up with the jagged shape
-            dim = random_state.randint(1, limits[ax], limits[0]).tolist()
+            dim = random_state.randint(1, 1 + limits[ax], limits[0]).tolist()
             if all(d == dim[0] for d in dim):
                 # if all the same value, randomly perturb one value
                 diff = -1 if dim[0] > 1 else +1
