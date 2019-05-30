@@ -697,7 +697,7 @@ def concatenate(jarrs: Iterable[JaggedArray], axis: int = 0) -> JaggedArray:
             shapes=np.concatenate([jarr.shapes for jarr in jarrs]),
         )
     else:
-        return JaggedArray.from_illife(
+        return JaggedArray.from_iliffe(
             [np.concatenate(arrs, axis=axis - 1) for arrs in zip(*jarrs)]
         )
 

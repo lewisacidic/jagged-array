@@ -50,7 +50,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                      [5, 6, 7]])
 
         Using an Illife vector:
-        >>> JaggedArray.from_illife([[0, 1, 2], [3, 4], [5, 6, 7]])
+        >>> JaggedArray.from_iliffe([[0, 1, 2], [3, 4], [5, 6, 7]])
         JaggedArray([[0, 1, 2],
                      [3, 4],
                      [5, 6, 7]])
@@ -443,22 +443,22 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         return JaggedArray(self.data.astype(dtype), self.shape)
 
     @classmethod
-    def from_illife(cls, arr: ArrayLike) -> JaggedArray:
-        """ Create a jagged array from an Illife vector (array of arrays).
+    def from_iliffe(cls, arr: ArrayLike) -> JaggedArray:
+        """ Create a jagged array from an Iliffe vector (array of arrays).
 
         Args:
             arr:
-                Illife vector to convert.
+                Iliffe vector to convert.
 
         Examples:
-            >>> JaggedArray.from_illife([[0, 1, 2],
+            >>> JaggedArray.from_iliffe([[0, 1, 2],
             ...                          [3, 4],
             ...                          [5, 6, 7]])
             JaggedArray([[0, 1, 2],
                          [3, 4],
                          [5, 6, 7]])
 
-            >>> JaggedArray.from_illife([[[0, 1, 2],
+            >>> JaggedArray.from_iliffe([[[0, 1, 2],
             ...                           [3, 4, 5]],
             ...                          [[6, 7]],
             ...                          [[ 8],
@@ -478,9 +478,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
                          [[11]]])
         """
-        from .illife import illife_to_jagged
+        from .iliffe import iliffe_to_jagged
 
-        return illife_to_jagged(arr)
+        return iliffe_to_jagged(arr)
 
     @classmethod
     def from_masked(cls, arr: np.masked.masked_array) -> JaggedArray:
@@ -587,7 +587,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         return jagged_to_masked(self)
 
-    def to_illife(self, copy=False) -> np.ndarray:
+    def to_iliffe(self, copy=False) -> np.ndarray:
         """ Convert the jagged array to an Illife vector.
 
         Args:
@@ -595,12 +595,12 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 Whether to return copies or views of the jagged array.
 
         Examples:
-            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).to_illife()
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).to_iliffe()
             array([array([0, 1, 2]),
                    array([3, 4]),
                    array([5, 6, 7])], dtype=object)
 
-            >>> JaggedArray(np.arange(33), (3, (3, 2, 3), (3, 6, 4))).to_illife()
+            >>> JaggedArray(np.arange(33), (3, (3, 2, 3), (3, 6, 4))).to_iliffe()
             array([array([[0, 1, 2],
                           [3, 4, 5],
                           [6, 7, 8]]),
@@ -610,9 +610,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                           [25, 26, 27, 28],
                           [29, 30, 31, 32]])], dtype=object)
         """
-        from .illife import jagged_to_illife
+        from .iliffe import jagged_to_iliffe
 
-        return jagged_to_illife(self, copy=copy)
+        return jagged_to_iliffe(self, copy=copy)
 
     def to_array(self, fill_value: Optional[Any] = np.nan) -> np.ndarray:
         """ Convert to a dense array.

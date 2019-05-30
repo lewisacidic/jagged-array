@@ -31,7 +31,7 @@ from .api import where
 from .api import zeros
 from .api import zeros_like
 from .core import JaggedArray
-from .illife import illife_to_jagged as from_illife
+from .iliffe import iliffe_to_jagged as from_iliffe
 from .masked import masked_to_jagged as from_masked
 
 __all__ = [
@@ -58,6 +58,6 @@ __all__ = [
     "zeros",
     "zeros_like",
     "JaggedArray",
-    "from_illife",
+    "from_iliffe",
     "from_masked",
 ]

@@ -4,32 +4,32 @@
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
 """
-jagged.illife
+jagged.iliffe
 ~~~~~~~~~~~~~
 
-Support for converting jagged arrays to and from Illife vectors.
+Support for converting jagged arrays to and from Iliffe vectors.
 """
 import numpy as np
 
 from .core import JaggedArray
-from .typing import IllifeLike
+from .typing import IliffeLike
 
 
-def sanitize_illife(obj: IllifeLike):
-    """ Sanitize an illife-like array
+def sanitize_iliffe(obj: IliffeLike):
+    """ Sanitize an iliffe-like array
 
     Args:
         ivec:
-            object to convert into an illife vector.
+            object to convert into an iliffe vector.
 
     Examples:
-        >>> sanitize_illife([[0, 1], [2]])
+        >>> sanitize_iliffe([[0, 1], [2]])
         array([array([0, 1]), array([2])])
 
-        >>> sanitize_illife(((0, 1), (2)))
+        >>> sanitize_iliffe(((0, 1), (2)))
         array([array([0, 1]), array([2])])
 
-        >>> sanitize_illife([[[0, 1], [2, 3]], [[4, 5, 6], [7, 8, 9]])
+        >>> sanitize_iliffe([[[0, 1], [2, 3]], [[4, 5, 6], [7, 8, 9]])
         array([array([[0, 1], [2, 3]]), array([[4, 5, 6], [7, 8, 9]])])
      """
     # avoid attempting to broadcast for subarrays with first dim equal to 1
@@ -38,19 +38,19 @@ def sanitize_illife(obj: IllifeLike):
     return ivec
 
 
-def illife_to_jagged(ivec: IllifeLike):
+def iliffe_to_jagged(ivec: IliffeLike):
     """ Convert an Illife vector to a jagged array. """
 
-    ivec = sanitize_illife(ivec)
+    ivec = sanitize_iliffe(ivec)
     return JaggedArray(
         np.concatenate([arr.flatten() for arr in ivec]),
         shapes=np.array([arr.shape for arr in ivec]),
     )
 
 
-def jagged_to_illife(jarr: JaggedArray, copy: bool = False):
-    """ Convert a jagged array to an illife vector. """
+def jagged_to_iliffe(jarr: JaggedArray, copy: bool = False):
+    """ Convert a jagged array to an iliffe vector. """
 
     if copy:
         jarr = jarr.copy()
-    return sanitize_illife(jarr)
+    return sanitize_iliffe(jarr)

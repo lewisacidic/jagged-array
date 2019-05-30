@@ -29,4 +29,4 @@ Number = Union[float, int]
 IndexLike = Union[
     type(Ellipsis), slice, int, Iterable[Union[type(Ellipsis), slice, int, bool]]
 ]
-IllifeLike = Iterable[Iterable[Union[Iterable, Any]]]
+IliffeLike = Iterable[Iterable[Union[Iterable, Any]]]

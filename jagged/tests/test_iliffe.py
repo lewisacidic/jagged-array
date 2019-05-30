@@ -3,16 +3,16 @@
 #
 # Copyright (C) 2019 Rich Lewis <opensource@richlew.is>
 # License: MIT
-""" Tests for jagged to illife operations. """
+""" Tests for jagged to iliffe operations. """
 import numpy as np
 import pytest
 
 from ..api import random
 from ..core import JaggedArray
-from ..illife import illife_to_jagged
-from ..illife import jagged_to_illife
+from ..iliffe import iliffe_to_jagged
+from ..iliffe import jagged_to_iliffe
 from .utils import assert_equal
-from .utils import assert_illife_equal
+from .utils import assert_iliffe_equal
 
 
 @pytest.mark.parametrize(
@@ -29,9 +29,9 @@ from .utils import assert_illife_equal
     ],
     ids=["with lists", "with tuples", "with ndarray", "expdim 1"],
 )
-def test_from_illife(ivec, desired):
-    assert_equal(illife_to_jagged(ivec), desired)
-    assert_equal(JaggedArray.from_illife(ivec), desired)
+def test_from_iliffe(ivec, desired):
+    assert_equal(iliffe_to_jagged(ivec), desired)
+    assert_equal(JaggedArray.from_iliffe(ivec), desired)
 
 
 ax1dim1 = np.empty(2, dtype=object)
@@ -58,9 +58,9 @@ ax1dim1[...] = [[[0, 1]], [[2]]]
         (JaggedArray(np.arange(3), (2, 1, (2, 1))), ax1dim1),
     ],
 )
-def test_to_illife(jarr, desired):
-    assert_illife_equal(jagged_to_illife(jarr), desired)
-    assert_illife_equal(jarr.to_illife(), desired)
+def test_to_iliffe(jarr, desired):
+    assert_iliffe_equal(jagged_to_iliffe(jarr), desired)
+    assert_iliffe_equal(jarr.to_iliffe(), desired)
 
 
 @pytest.mark.parametrize("dtype", ["f8", "f4", "i8", "i4"])
@@ -89,5 +89,5 @@ def test_to_illife(jarr, desired):
 )
 def test_round_trip(shape, dtype):
     jarr = random(shape, dtype=dtype)
-    result = JaggedArray.from_illife(jarr.to_illife())
+    result = JaggedArray.from_iliffe(jarr.to_iliffe())
     assert_equal(jarr, result)
