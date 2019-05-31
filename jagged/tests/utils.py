@@ -12,25 +12,18 @@ from pytest import raises
 from pytest import warns
 
 from ..api import array_equal
-from ..core import JaggedArray
-from ..shape import JaggedShape
 
 
 def assert_equal(jarr1, jarr2):
     assert array_equal(jarr1, jarr2)
 
 
-def assert_illife_equal(ivec1, ivec2):
+def assert_iliffe_equal(ivec1, ivec2):
     assert all(np.array_equal(a1, a2) for a1, a2 in zip(ivec1, ivec2))
 
 
 def assert_masked_equal(marr1, marr2):
     assert np.ma.allequal(marr1, marr2)
-
-
-def arange_with_shape(shape):
-    shape = JaggedShape(shape)
-    return JaggedArray(np.arange(shape.size), shape)
 
 
 __all__ = [
@@ -39,6 +32,6 @@ __all__ = [
     "warns",
     "assert_equal",
     "assert_flat_equal",
-    "assert_illife_equal",
+    "assert_iliffe_equal",
     "assert_masked_equal",
 ]
