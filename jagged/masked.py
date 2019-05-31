@@ -13,6 +13,7 @@ import numpy as np
 
 from .core import JaggedArray
 from .shape import JaggedShape
+from .typing import DtypeLike
 
 
 def shape_to_mask(shape: JaggedShape) -> np.ndarray:
@@ -57,9 +58,9 @@ def mask_to_shape(mask: np.ndarray) -> JaggedShape:
     )
 
 
-def masked_to_jagged(arr: np.ma.MaskedArray) -> JaggedArray:
+def masked_to_jagged(arr: np.ma.MaskedArray, dtype: DtypeLike = None) -> JaggedArray:
     """ convert a masked array to a jagged array """
-    return JaggedArray(arr.compressed(), mask_to_shape(arr.mask))
+    return JaggedArray(arr.compressed(), mask_to_shape(arr.mask), dtype=dtype)
 
 
 def jagged_to_masked(arr: JaggedArray) -> np.ma.MaskedArray:

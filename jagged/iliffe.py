@@ -12,6 +12,7 @@ Support for converting jagged arrays to and from Iliffe vectors.
 import numpy as np
 
 from .core import JaggedArray
+from .typing import DtypeLike
 from .typing import IliffeLike
 
 
@@ -38,13 +39,14 @@ def sanitize_iliffe(obj: IliffeLike):
     return ivec
 
 
-def iliffe_to_jagged(ivec: IliffeLike):
+def iliffe_to_jagged(ivec: IliffeLike, dtype: DtypeLike = None):
     """ Convert an Illife vector to a jagged array. """
 
     ivec = sanitize_iliffe(ivec)
     return JaggedArray(
         np.concatenate([arr.flatten() for arr in ivec]),
         shapes=np.array([arr.shape for arr in ivec]),
+        dtype=dtype,
     )
 
 

@@ -444,12 +444,14 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         return JaggedArray(self.data.astype(dtype), self.shape)
 
     @classmethod
-    def from_iliffe(cls, arr: ArrayLike) -> JaggedArray:
+    def from_iliffe(cls, arr: ArrayLike, dtype: DtypeLike = None) -> JaggedArray:
         """ Create a jagged array from an Iliffe vector (array of arrays).
 
         Args:
             arr:
                 Iliffe vector to convert.
+            dtype:
+                The dtype of the resulting jagged array.
 
         Examples:
             >>> JaggedArray.from_iliffe([[0, 1, 2],
@@ -481,7 +483,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         """
         from .iliffe import iliffe_to_jagged
 
-        return iliffe_to_jagged(arr)
+        return iliffe_to_jagged(arr, dtype)
 
     @classmethod
     def from_masked(cls, arr: np.masked.masked_array) -> JaggedArray:
