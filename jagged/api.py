@@ -23,11 +23,87 @@ from .typing import ArrayLike
 from .typing import AxisLike
 from .typing import DtypeLike
 from .typing import JaggedShapeLike
+from .typing import Number
 from .typing import RandomState
+from .typing import ShapeLike
 from .utils import is_integer
 from .utils import sanitize_axis
 from .utils import shape_is_jagged
 from .utils import shape_to_size
+
+
+def arange(
+    *args,
+    start: Number = None,
+    stop: Number = None,
+    step: Number = None,
+    shape: ShapeLike = None,
+    dtype: DtypeLike = None,
+):
+    """ interval reshaped to a given shape
+
+    Args:
+        args:
+            Positional args as per np.arange: [start,] stop,[ step,]
+            These will be overwritten with provided kwargs
+
+        start:
+            the start of interval (inclusive) - default is 0
+
+        stop:
+            the end of the interval (exclusive)
+
+        step:
+            the spacing between values
+
+        dtype:
+            the type of output array
+
+    Examples:
+        >>> import jagged
+        >>> jagged.arange(shape=(3, (3, 2, 3)))
+        JaggedArray([[0, 1, 2],
+                     [3, 4],
+                     [5, 6, 7]])
+
+        >>> jagged.arange(5, 13, shape=(3, (3, 2, 3)))
+        JaggedArray([[ 5,  6,  7],
+                     [ 8,  9],
+                     [10, 11, 12]])
+
+        >>> jagged.arange(0, 15, 2, shape=(3, (3, 2, 3)))
+        JaggedArray([[ 0,  2,  4],
+                     [ 6,  8],
+                     [10, 12, 14]])
+
+    See Also:
+        numpy.arange
+    """
+    if shape is None and stop is None:
+        raise ValueError("arange requires either a `shape` or `stop`.")
+
+    if len(args) == 1:
+        stop, = args
+    elif len(args) == 2:
+        start, stop = args
+    elif len(args) == 3:
+        start, stop, step = args
+
+    start = start or 0
+    step = step or 1
+
+    if stop is not None:
+        size = int(np.ceil((stop - start) / step))
+
+    if shape is None:
+        shape = JaggedShape((size,))
+    else:
+        shape = JaggedShape(shape)
+        if stop is not None and size != shape.size:
+            raise ValueError(f"range with size {size} cannot have given shape {shape}")
+        stop = step * (start + shape.size)
+
+    return JaggedArray(np.arange(start, stop, step), shape, dtype=dtype)
 
 
 def zeros(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None):
@@ -664,43 +740,45 @@ def concatenate(jarrs: Iterable[JaggedArray], axis: int = 0) -> JaggedArray:
         >>> import numpy as np
         >>> import jagged
         >>> from jagged import JaggedArray
-        >>> ja = JaggedArray(np.arange(8), shape=(3, (3, 2, 3)))
-
-        >>> jagged.concatenate([ja, ja], axis=0)
+        >>> ja1 = JaggedArray(np.arange(8), shape=(3, (3, 2, 3)))
+        >>> ja2 = JaggedArray(np.arange(9), shape=(3, (4, 3, 2)))
+        >>> jagged.concatenate([ja1, ja2], axis=0)
         JaggedArray([[0, 1, 2],
                      [3, 4],
                      [5, 6, 7],
-                     [0, 1, 2],
-                     [3, 4],
-                     [5, 6, 7]])
+                     [0, 1, 2, 3],
+                     [4, 5, 6],
+                     [7, 8]])
 
         >>> _.shape
-        (6, (3, 2, 3, 3, 2, 3))
+        (6, (3, 2, 3, 4, 3, 2))
 
         >>> jagged.concatenate([ja, ja], axis=1)
-        JaggedArray([[0, 1, 2, 0, 1, 2],
-                     [3, 4, 3, 4],
-                     [5, 6, 7, 5, 6, 7]])
+        JaggedArray([[0, 1, 2, 0, 1, 2, 3],
+                     [3, 4, 4, 5, 6],
+                     [5, 6, 7, 7, 8]])
 
         >>> _.shape
         (3, (6, 4, 6))
 
     """
     axis = sanitize_axis(axis, jarrs[0].ndim, multi=False)
-    if not all(
-        len(set(shapes)) == 1
-        for i, shapes in enumerate(zip(*(jarr.shape for jarr in jarrs)))
-        if i != axis
-    ):
-        msg = "all the input array dimensions except for the concatenation axis must match exactly"
-        raise ValueError(msg)
-    # TODO: optimize
+    if not len({arr.ndim for arr in jarrs}) == 1:
+        raise ValueError("all the input arrays must have same number of dimensions")
+
     if axis == 0:
         return JaggedArray(
-            np.concatenate([jarr.data for jarr in jarrs]),
+            np.concatenate([jarr.ravel() for jarr in jarrs]),
             shapes=np.concatenate([jarr.shapes for jarr in jarrs]),
         )
     else:
+        if not all(
+            len(set(shapes)) == 1
+            for i, shapes in enumerate(zip(*(jarr.shape for jarr in jarrs)))
+            if i != axis
+        ):
+            msg = "all the input array dimensions except for the concatenation axis must match exactly"
+            raise ValueError(msg)
         return JaggedArray.from_iliffe(
             [np.concatenate(arrs, axis=axis - 1) for arrs in zip(*jarrs)]
         )

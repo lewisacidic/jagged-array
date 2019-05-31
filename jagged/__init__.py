@@ -9,6 +9,7 @@ jagged
 
 Jagged array support for the pydata ecosystem.
 """
+from .api import arange
 from .api import array_equal
 from .api import concatenate
 from .api import diagonal
@@ -36,6 +37,7 @@ from .masked import masked_to_jagged as from_masked
 
 __all__ = [
     "JaggedArray",
+    "arange",
     "concatenate",
     "diagonal",
     "expand_dims",
