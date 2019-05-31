@@ -32,6 +32,8 @@ dtypes = "f8", "f4", "i8", "i4"
             raises(ValueError),
         ),
         ({"data": [[1], [2], [3]], "shape": (2, (1, 2))}, raises(ValueError)),
+        ({"data": [1, 2, 3], "shape": (2, (1, 2)), "dtype": "i4"}, does_not_raise()),
+        ({"data": [1, 2, 3], "shape": (2, (1, 2)), "dtype": "f2"}, does_not_raise()),
     ],
     ids=[
         "data as list",
@@ -43,6 +45,8 @@ dtypes = "f8", "f4", "i8", "i4"
         "no shape or shapes",
         "both shape and shapes",
         "multidimensional data",
+        "setting int dtype",
+        "setting float dtype",
     ],
 )
 def test_instantiation(kwargs, expectation):
@@ -51,6 +55,8 @@ def test_instantiation(kwargs, expectation):
         assert isinstance(ja.data, np.ndarray)
         assert isinstance(ja.shape, tuple)
         assert ja.shape == (2, (1, 2))
+        if kwargs.get("dtype"):
+            assert ja.dtype == kwargs.get("dtype")
 
 
 @pytest.fixture

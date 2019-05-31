@@ -98,6 +98,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         data: ArrayLike,
         shape: Optional[JaggedShapeLike] = None,
         shapes: Optional[np.ndarray] = None,
+        dtype: DtypeLike = None,
     ) -> JaggedArray:
         """ Initialize a jagged array.
 
@@ -114,7 +115,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             else:
                 msg = "`shape` and `shapes` cannot be passed simultaneously."
                 raise ValueError(msg)
-        self.data = data
+        self.data = np.asarray(data, dtype=dtype)
         self._verify_consistency()
 
     def _verify_consistency(self):
