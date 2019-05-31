@@ -21,7 +21,7 @@ from .utils import assert_iliffe_equal
     [
         iliffe_to_jagged,
         JaggedArray.from_iliffe,
-        pytest.param(JaggedArray, mark=pytest.mark.xfail),
+        pytest.param(JaggedArray, marks=pytest.mark.xfail),
     ],
 )
 @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ from .utils import assert_iliffe_equal
         ([[[0, 1]], [[2]]], arange(shape=(2, 1, (2, 1)))),
         ([[0, 1.0], [2, 3, 4], [5, 6]], arange(shape=(3, (2, 3, 2)), dtype=float)),
     ],
-    ids=["with lists", "with tuples", "with ndarray", "expdim 1"],
+    ids=["with lists", "with tuples", "with ndarray", "expdim 1", "detect dtype"],
 )
 def test_from_iliffe(ivec, desired, func):
     result = func(ivec)
@@ -70,8 +70,8 @@ ax1dim1[...] = [[[0, 1]], [[2]]]
         (arange(shape=(2, 1, (2, 1))), ax1dim1),
     ],
 )
-def test_to_iliffe(jarr, desired):
-    assert_iliffe_equal(jagged_to_iliffe(jarr), desired)
+def test_to_iliffe(func, jarr, desired):
+    assert_iliffe_equal(func(jarr), desired)
 
 
 @pytest.mark.parametrize("dtype", ["f8", "f4", "i8", "i4"])
@@ -99,6 +99,6 @@ def test_to_iliffe(jarr, desired):
     ],
 )
 def test_round_trip(shape, dtype):
-    jarr = random(shape, dtype=dtype)
+    jarr = random(shape, dtype=dtype, random_state=42)
     result = JaggedArray.from_iliffe(jarr.to_iliffe())
     assert_equal(jarr, result)
