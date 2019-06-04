@@ -14,6 +14,7 @@ from typing import Any
 from typing import BinaryIO
 from typing import Iterable
 from typing import TextIO
+from typing import Tuple
 from typing import Union
 
 import numpy as np
@@ -27,6 +28,7 @@ JaggedShapeLike = Union[np.ndarray, Iterable[Union[int, Iterable[int]]]]
 AxisLike = Union[int, Iterable[int]]
 Number = Union[float, int]
 IndexLike = Union[
-    type(Ellipsis), slice, int, Iterable[Union[type(Ellipsis), slice, int, bool]]
+    type(Ellipsis), slice, int, Iterable[Union[type(Ellipsis), slice, int, None, bool]]
 ]
+Index = Tuple[Union[slice, int, None, np.ndarray]]
 IliffeLike = Iterable[Iterable[Union[Iterable, Any]]]
