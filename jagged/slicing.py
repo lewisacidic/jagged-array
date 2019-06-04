@@ -65,6 +65,9 @@ def sanitize_index(index: IndexLike) -> Index:
 
     This will convert it to a tuple, and turn all iterables to numpy arrays.
 
+    It will throw an index error if there are incorrect types.
+    (i.e. not an integer, ellipse, slice, None, or integer/boolean indexes).
+
     Args:
         index:
             The index to sanitize.
@@ -88,7 +91,20 @@ def sanitize_index(index: IndexLike) -> Index:
 
     if not isinstance(index, tuple):
         index = (index,)
-    return tuple(np.array(ix) if is_iterable(ix) else ix for ix in index)
+    index = tuple(np.array(ix) if is_iterable(ix) else ix for ix in index)
+    for ix in index:
+        types = np.signedinteger, np.bool_
+        if hasattr(ix, "dtype"):
+            if not any(np.issubdtype(ix.dtype, dtype) for dtype in types):
+                msg = f"arrays used as indices must be of integer (or boolean) type"
+                raise IndexError(msg)
+        elif not isinstance(ix, (int, np.integer, slice)) and ix not in (
+            Ellipsis,
+            None,
+        ):
+            msg = "only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices"
+            raise IndexError(msg)
+    return index
 
 
 def expand_index(index: Tuple, n_dims: int) -> Tuple:
@@ -161,7 +177,7 @@ def canonicalize_subindex(index_dim, shape_dims, ax=0):
         shape_dim = shape_dims[0]
         lim = shape_dim if is_integer(shape_dim) else max(shape_dim)
 
-        if index_dim > lim or index_dim < -lim:
+        if index_dim >= lim or index_dim < -lim:
             raise IndexError(
                 f"index {index_dim} is out of bounds for axis {ax} with size {lim}"
             )
@@ -201,22 +217,19 @@ def canonicalize_subindex(index_dim, shape_dims, ax=0):
         else:
             shape_dim = shape_dims[0]
             lim = shape_dim if is_integer(shape_dim) else max(shape_dim)
-            dtype = index_dim.dtype
-            if not np.issubdtype(dtype, np.signedinteger):
-                msg = f"arrays used as indices must be of integer (or boolean) type. Was {dtype}"
-                raise IndexError(msg)
 
             min_, max_ = np.min(index_dim), np.max(index_dim)
-            oob = max_ if max_ > lim else min_ if min_ < -lim else None
+            oob = max_ if max_ >= lim else min_ if min_ < -lim else None
             if oob:
                 msg = f"index {oob} is out of bounds for axis {ax} with size {lim}"
                 raise IndexError(msg)
             else:
-                return (np.where(index_dim > 0, index_dim, index_dim + lim),)
+                # numpy posify
+                return (np.where(index_dim >= 0, index_dim, index_dim + lim),)
 
 
 def posify(ix, lim):
-    return ix if ix > 0 else ix + lim
+    return ix if ix >= 0 else ix + lim
 
 
 def inrange(x, lo, hi):
