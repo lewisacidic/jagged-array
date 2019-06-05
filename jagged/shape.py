@@ -163,6 +163,41 @@ class JaggedShape(tuple):
         """
         return cls(shapes_to_shape(shapes))
 
+    def offsets_for(self, dtype):
+        """ the offsets for the given shape
+
+        """
+
+        itemsize = np.dtype(dtype).itemsize
+        return np.insert(np.cumsum(self.sizes) * itemsize, 0, 0)
+
+    def strides_for(self, dtype):
+        """ the strides for the given shape.
+
+        Assume C order.
+
+        Examples:
+            >>> JaggedShape((3, (3, 2, 3))).strides_for("i8")
+            (8,)
+
+            >>> JaggedShape((3, 2, (3, 2, 3))).strides_for("i8")
+            (array([24, 16, 24]), 8)
+
+            >>> JaggedShape((3, 2, (3, 2, 3))).strides_for("i8")
+            (8, 16)
+
+            >>> JaggedShape((3, 2, (3, 2, 3))).strides_for("i4")
+            (array([12, 8, 12]), 8)
+
+            >>> JaggedShape((3, (3, 2, 3), 2)).strides_for("i8")
+            (16, 8)
+        """
+        itemsize = np.dtype(dtype).itemsize
+
+        cp = np.cumprod(self.to_shapes()[:, ::-1], axis=1)
+        cp = cp[:, -2::-1]
+        return itemsize * np.hstack([cp, np.ones((len(cp), 1), cp.dtype)])
+
 
 if __name__ == "__main__":
     import doctest

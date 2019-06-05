@@ -46,6 +46,7 @@ def iliffe_to_jagged(ivec: IliffeLike, dtype: DtypeLike = None):
     return JaggedArray(
         np.concatenate([arr.flatten() for arr in ivec]),
         shapes=np.array([arr.shape for arr in ivec]),
+        strides=np.array([arr.strides for arr in ivec]),
         dtype=dtype,
     )
 

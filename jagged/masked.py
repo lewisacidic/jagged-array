@@ -60,7 +60,12 @@ def mask_to_shape(mask: np.ndarray) -> JaggedShape:
 
 def masked_to_jagged(arr: np.ma.MaskedArray, dtype: DtypeLike = None) -> JaggedArray:
     """ convert a masked array to a jagged array """
-    return JaggedArray(arr.compressed(), mask_to_shape(arr.mask), dtype=dtype)
+    return JaggedArray(
+        data=arr.compressed(),
+        shape=mask_to_shape(arr.mask),
+        strides=arr.strides,
+        dtype=dtype,
+    )
 
 
 def jagged_to_masked(arr: JaggedArray) -> np.ma.MaskedArray:

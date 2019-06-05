@@ -35,6 +35,12 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             The data to be represented flattened as a one dimensional array.
         shape:
             The shape of the data.
+        shapes:
+            The shapes of the data.
+        strides:
+            The strides of the data.
+        dtype:
+            The dtype of the data.
 
     Examples:
         Instantiating a jagged array:
@@ -49,7 +55,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                      [3, 4],
                      [5, 6, 7]])
 
-        Using an Illife vector:
+        Using an Iliffe vector:
         >>> JaggedArray.from_iliffe([[0, 1, 2], [3, 4], [5, 6, 7]])
         JaggedArray([[0, 1, 2],
                      [3, 4],
@@ -98,6 +104,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         data: ArrayLike,
         shape: Optional[JaggedShapeLike] = None,
         shapes: Optional[np.ndarray] = None,
+        strides: Optional[np.ndarray] = None,
         dtype: DtypeLike = None,
     ) -> JaggedArray:
         """ Initialize a jagged array.
@@ -115,7 +122,13 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             else:
                 msg = "`shape` and `shapes` cannot be passed simultaneously."
                 raise ValueError(msg)
+
         self.data = np.asarray(data, dtype=dtype)
+
+        self.strides = (
+            strides if strides is not None else self.shape.strides_for(self.dtype)
+        )
+
         self._verify_consistency()
 
     def _verify_consistency(self):
@@ -225,11 +238,15 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         return jagged_to_string(self, prefix=prefix, suffix=suffix, separator=", ")
 
     def __getitem__(self, item):
-        view = self.data.view()
-        cs = np.insert(np.cumsum(self.sizes), 0, 0)
-        view = view[cs[item] : cs[item + 1]]
-        view.shape = self.shapes[item]
-        return view
+        offsets = self.shape.offsets_for(self.dtype)
+
+        return np.ndarray(
+            buffer=self.data,
+            offset=offsets[item],
+            strides=self.strides[item],
+            shape=self.shapes[item],
+            dtype=self.dtype,
+        )
 
     @property
     def data(self) -> np.ndarray:
