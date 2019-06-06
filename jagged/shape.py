@@ -9,7 +9,7 @@ jagged.shape
 
 Jagged shape functionality for jagged arrays.
 """
-import warnings
+# import warnings
 from typing import Tuple
 
 import numpy as np
@@ -56,9 +56,9 @@ class JaggedShape(tuple):
     def __new__(cls, shape: JaggedShapeLike):
         return super(JaggedShape, cls).__new__(cls, sanitize_shape(shape))
 
-    def __init__(self, shape: JaggedShapeLike):
-        if not len(self.jagged_axes):
-            warnings.warn("Shape is not jagged. Consider using a numpy array.")
+    # def __init__(self, shape: JaggedShapeLike):
+    # if not len(self.jagged_axes):
+    #     warnings.warn("Shape is not jagged. Consider using a numpy array.")
 
     def to_shapes(self):
         """ the indexed shapes along the inducing axis
