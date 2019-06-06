@@ -17,6 +17,7 @@ from typing import Tuple
 
 import numpy as np
 
+from .indexing import getitem
 from .shape import JaggedShape
 from .typing import ArrayLike
 from .typing import AxisLike
@@ -237,16 +238,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         return jagged_to_string(self, prefix=prefix, suffix=suffix, separator=", ")
 
-    def __getitem__(self, item):
-        offsets = self.shape.offsets_for(self.dtype)
-
-        return np.ndarray(
-            buffer=self.data,
-            offset=offsets[item],
-            strides=self.strides[item],
-            shape=self.shapes[item],
-            dtype=self.dtype,
-        )
+    __getitem__ = getitem
 
     @property
     def data(self) -> np.ndarray:
@@ -377,6 +369,19 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             dtype('float32')
         """
         return self.data.dtype
+
+    @property
+    def offsets(self) -> np.ndarray:
+        """ the offsets of the subarrays along the inducing axis.
+
+        Examples:
+            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).offsets
+            array([0, 24, 40, 64])
+
+            >>> JaggedArray(np.arange(16), (3, 2, (3, 2, 3))).offsets
+            array([0, 48, 80 128])
+         """
+        return self.dtype.itemsize * np.insert(np.cumsum(self.sizes), 0, 0)
 
     @property
     def limits(self) -> np.ndarray:
