@@ -18,7 +18,6 @@ from typing import Tuple
 import numpy as np
 
 from .core import JaggedArray
-from .shape import JaggedShape
 from .typing import ArrayLike
 from .typing import AxisLike
 from .typing import DtypeLike
@@ -98,12 +97,12 @@ def arange(
         size = int(np.ceil((stop - start) / step))
 
     if shape is None:
-        shape = JaggedShape((size,))
+        shape = (size,)
     else:
-        shape = JaggedShape(shape)
-        if stop is not None and size != shape.size:
+        shape_size = shape_to_size(shape)
+        if stop is not None and size != shape_size:
             raise ValueError(f"range with size {size} cannot have given shape {shape}")
-        stop = step * (start + shape.size)
+        stop = step * (start + shape_size)
 
     return JaggedArray(shape, buffer=np.arange(start, stop, step), dtype=dtype)
 
@@ -528,8 +527,7 @@ def random(
                 diff = -1 if dim[0] > 1 else +1
                 dim[random_state.randint(0, limits[0])] += diff
             shape[ax] = dim
-    shape = JaggedShape(shape)
-    return JaggedArray(data_rvs(shape.size), shape)
+    return JaggedArray(shape, buffer=data_rvs(shape.size))
 
 
 def where(condition: JaggedArray, x: JaggedArray, y: JaggedArray):
@@ -666,14 +664,12 @@ def squeeze(jarr: JaggedArray, axis: Optional[AxisLike] = None) -> JaggedArray:
                 msg = "cannot select an axis to squeeze out which has size not equal to one"
                 raise ValueError(msg)
 
-    shape = JaggedShape(
-        [
-            dim
-            for i, dim in enumerate(jarr.shape)
-            if i in jarr.shape.jagged_axes or i not in axis or dim > 1
-        ]
+    shape = tuple(
+        dim
+        for i, dim in enumerate(jarr.shape)
+        if i in jarr.jagged_axes or i not in axis or dim > 1
     )
-    return JaggedArray(jarr.data, shape)
+    return JaggedArray(shape, buffer=jarr.data)
 
 
 def expand_dims(jarr: JaggedArray, axis: int = -1) -> JaggedArray:
@@ -938,8 +934,7 @@ def resize(jarr: JaggedArray, shape: JaggedShapeLike):
                      [0, 1],
                      [2, 0, 1]])
     """
-    shape = JaggedShape(shape)
-    return JaggedArray(np.resize(jarr.data, shape.size), shape)
+    return JaggedArray(shape, np.resize(jarr.data, shape.size))
 
 
 def flatten(jarr):

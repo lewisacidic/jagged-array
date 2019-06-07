@@ -13,12 +13,12 @@ from typing import Tuple
 
 import numpy as np
 
-from .shape import JaggedShape
 from .typing import Index
 from .typing import IndexLike
 from .typing import JaggedShapeLike
 from .utils import is_integer
 from .utils import is_iterable
+from .utils import sanitize_shape
 
 
 def canonicalize_index(index: IndexLike, shape: JaggedShapeLike):
@@ -29,18 +29,16 @@ def canonicalize_index(index: IndexLike, shape: JaggedShapeLike):
         2) expand the index to cover all dimensions
     """
 
-    shape = JaggedShape(shape)
+    shape = sanitize_shape(shape)
     index = sanitize_index(index)
-    index = expand_index(index, shape.ndim)
-    index = sum(
+    index = expand_index(index, len(shape))
+    return sum(
         (
             canonicalize_subindex(*aligned)
             for aligned in align_index_shapes(index, shape)
         ),
         (),
     )
-
-    return index
 
 
 def align_index_shapes(index: Index, shape: JaggedShapeLike):

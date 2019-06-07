@@ -12,8 +12,8 @@ Support for converting jagged arrays to and from numpy masked arrays.
 import numpy as np
 
 from .core import JaggedArray
-from .shape import JaggedShape
 from .typing import DtypeLike
+from .typing import JaggedShape
 
 
 def shape_to_mask(shape: JaggedShape) -> np.ndarray:

@@ -28,6 +28,8 @@ ShapeLike = Union[np.ndarray, Iterable[int]]
 JaggedMetadata = Tuple[int, Tuple[int]]
 
 JaggedShapeLike = Union[np.ndarray, Iterable[Union[int, Iterable[int]]]]
+JaggedShape = Tuple[Union[int, Tuple[int]]]
+
 AxisLike = Union[int, Iterable[int]]
 Number = Union[float, int]
 IndexLike = Union[

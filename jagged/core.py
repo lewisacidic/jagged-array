@@ -19,12 +19,12 @@ from typing import Union
 import numpy as np
 
 from .indexing import getitem
-from .shape import JaggedShape
 from .slicing import canonicalize_index
 from .typing import ArrayLike
 from .typing import AxisLike
 from .typing import DtypeLike
 from .typing import JaggedMetadata
+from .typing import JaggedShape
 from .typing import JaggedShapeLike
 from .typing import Number
 from .typing import ShapeLike
@@ -1024,7 +1024,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 ...
             ValueError: cannot reshape jagged array of size 8 into shape (3, (3, 4, 3)) (size 10).
         """
-        shape = JaggedShape(shape)
+
         if shape.size != self.size:
             msg = f"cannot reshape array of size {self.size} into shape {shape} (size {shape.size})"
             raise ValueError(msg)
@@ -1053,8 +1053,6 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                          [3, 4, 5, 6],
                          [7, 0, 0]])
         """
-
-        shape = JaggedShape(shape)
         self.data.resize(shape.size)
         self.shape = shape
 
