@@ -24,6 +24,9 @@ RandomState = Union[np.random.RandomState, int]
 DtypeLike = Union[str, np.dtype]
 ArrayLike = Union[np.ndarray, Iterable]
 ShapeLike = Union[np.ndarray, Iterable[int]]
+
+JaggedMetadata = Tuple[int, Tuple[int]]
+
 JaggedShapeLike = Union[np.ndarray, Iterable[Union[int, Iterable[int]]]]
 AxisLike = Union[int, Iterable[int]]
 Number = Union[float, int]

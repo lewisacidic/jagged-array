@@ -19,6 +19,7 @@ from typing import Union
 import numpy as np
 
 from .typing import AxisLike
+from .typing import JaggedMetadata
 from .typing import JaggedShapeLike
 
 
@@ -107,6 +108,59 @@ def is_iterable(obj):
         return False
     else:
         return isinstance(obj, Iterable)
+
+
+def metadata_to_array(inducing: int, metadata: JaggedMetadata) -> np.ndarray:
+    """ Turn jagged metadata into an array
+
+    Examples:
+        >>> metadata_to_array(3, ((1, 3, 2),))
+        array([[1],
+               [3],
+               [2]])
+
+        >>> metadata_to_array(3, ((1, 3, 2), (3, 2, 3)))
+        array([[1, 3],
+               [3, 2],
+               [2, 3]])
+
+        >>> metadata_to_array(3, ((3, 1, 1), 2))
+        array([[3, 2],
+               [1, 2],
+               [1, 2]])
+    """
+
+    if any(len(ax) != inducing for ax in metadata if isinstance(ax, tuple)):
+        msg = "Jagged axes must have number of entries equal to length of inducing dim"
+        raise ValueError(msg)
+    res = np.empty((inducing, len(metadata)), dtype=int)
+    for i, ax in enumerate(metadata):
+        res[:, i] = ax
+    return res
+
+
+def array_to_metadata(arr: np.ndarray) -> JaggedMetadata:
+    """ Turn an array into metadata
+
+    Examples:
+        >>>array_to_metadata(np.array([[1], [3], [2]]))
+        (3, (1, 3, 2))
+
+        >>> metadata_to_array(np.array([[1, 3], [3, 2], [2, 3]]))
+        (3, (1, 3, 2), (3, 2, 3))
+
+        >>> metadata_to_array(np.array([[3, 2], [1, 2], [1, 2]]))
+        (3, (3, 1, 1), 2)
+    """
+
+    return tuple(
+        dim
+        if is_integer(dim)
+        else dim[0]
+        if all(jdim == dim[0] for jdim in dim)
+        else tuple(dim)
+        for dim in arr.T
+    )
 
 
 def sanitize_shape(shape):
@@ -310,7 +364,7 @@ def jagged_to_string(
     # create a custom formatter for all the data
     formatter = formatter or {
         "all": np.core.arrayprint._get_format_function(
-            jarr.data, **np.get_printoptions()
+            np.asarray(jarr.data), **np.get_printoptions()
         )
     }
     delim = separator + "\n" * (len(jarr.shape) - 1)
@@ -335,7 +389,7 @@ def jagged_to_string(
 
 
 def sanitize_axis(axis: AxisLike, ndim: int, multi=True) -> Optional[Tuple[int]]:
-    """ Coerce multiple axes input into cannonical format.
+    """ Coerce multiple axes input into canonical format.
 
     The canonical format is a tuple of positive integers specifying the axes.
 
