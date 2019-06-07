@@ -29,6 +29,7 @@ from .typing import JaggedShapeLike
 from .typing import Number
 from .typing import ShapeLike
 from .utils import array_to_metadata
+from .utils import is_integer
 from .utils import jagged_to_string
 from .utils import metadata_to_array
 from .utils import sanitize_shape
@@ -498,49 +499,44 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         return len(self.shape)
 
     @property
-    def dtype(self) -> np.dtype:
-        """ the dtype of the contained data.
+    def minshape(self) -> np.ndarray:
+        """ the length of the smallest subarray along each axis.
+
+        i.e. the shape of the 'smooth core' of the array.
+        This would be the shape of the resultant smooth array.
 
         Examples:
-            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).dtype
-            dtype('int64')
-
-            >>> JaggedArray(np.arange(8, dtype='f4'), (3, (3, 2, 3))).dtype
-            dtype('float32')
-        """
-        return self.data.dtype
-
-    @property
-    def offsets(self) -> np.ndarray:
-        """ the offsets of the subarrays along the inducing axis.
-
-        Examples:
-            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).offsets
-            array([0, 24, 40, 64])
-
-            >>> JaggedArray(np.arange(16), (3, 2, (3, 2, 3))).offsets
-            array([0, 48, 80 128])
-         """
-        return self.dtype.itemsize * np.insert(np.cumsum(self.sizes), 0, 0)
-
-    @property
-    def limits(self) -> np.ndarray:
-        """ the length of the largest subarray along each axis.
-
-        i.e. the shape of the 'convex hull' of the array.
-        This would be the shape of the resultant dense array.
-
-        Examples:
-            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).limits
+            >>> jagged.arange(shape=(3, (3, 2, 3))).minshape
             (3, 3)
 
-            >>> JaggedArray(np.arange(18), (3, (4, 2, 2), (2, 3, 2))).limits
+            >>> jagged.arange(shape=(3, (4, 2, 2), (2, 3, 2))).minshape
             (3, 4, 3)
 
         See Also:
             JaggedArray.shape
+            JaggedArray.maxshape
         """
-        return self.shape.limits
+        return tuple(ax if is_integer(ax) else min(ax) for ax in self.shape)
+
+    @property
+    def maxshape(self) -> tuple:
+        """ the length of the largest subarray along each axis.
+
+        i.e. the shape of the 'convex hull' of the array.
+        This would be the shape of the resultant masked array.
+
+        Examples:
+            >>> jagged.arange(shape=(3, (3, 2, 3))).maxshape
+            (3, 3)
+
+            >>> jagged.arange(shape=(3, (4, 2, 2), (2, 3, 2))).maxshape
+            (3, 4, 3)
+
+        See Also:
+            JaggedArray.shape
+            JaggedArray.minshape
+        """
+        return tuple(ax if is_integer(ax) else max(ax) for ax in self.shape)
 
     @property
     def jagged_axes(self) -> Tuple[int]:
@@ -561,8 +557,25 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         See Also:
             JaggedArray.is_jagged
-         """
-        return self.shape.jagged_axes
+        """
+        return tuple(i for i, ax in enumerate(self.shape) if isinstance(ax, tuple))
+
+    @property
+    def is_jagged(self) -> bool:
+        """ whether the array is jagged.
+
+        Examples:
+            >>> jagged.arange(shape=(3, (3, 2, 3)))
+            True
+
+            >>> jagged.arange(shape=(3, 3))
+            False
+
+        See also:
+            JaggedArray.jagged_axes
+        """
+
+        return any(self.jagged_axes)
 
     def copy(self) -> JaggedArray:
         """ copy the jagged array.
@@ -760,49 +773,64 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         return jagged_to_iliffe(self, copy=copy)
 
-    def to_array(self, fill_value: Optional[Any] = np.nan) -> np.ndarray:
-        """ Convert to a dense array.
-
-        Args:
-            fill_value:
-                The value to fill in the array.
-
-        Notes:
-            Using the default of `np.nan` as the `fill_value` will cause a
-            jagged array of integer dtype to be coerced into a float array
-            due to the lack of a numpy nan integer type.
+    def to_array(self, copy=True):
+        """ return a numpy array of the JaggedArray given that it is smooth.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(8),  (3, (3, 2, 3))))
-            >>> ja.to_array()
-            array([[ 0.,  1.,  2.],
-                   [ 3.,  4., nan],
-                   [ 5.,  6.,  7.]])
+            >>> jagged.arange(shape=(2, 2)).to_array()
+            array([[0, 1],
+                   [2, 3]])
 
-            >>> ja.to_array(-1)
-            array([[ 0,  1,  2],
-                   [ 3,  4, -1],
-                   [ 5,  6,  7]])
-
-            >>> JaggedArray(np.arange(33), np.array([[3, 2, 3],
-            ...                                      [3, 6, 4]])).to_array(-1)
-            array([[[ 0,  1,  2, -1, -1, -1],
-                    [ 3,  4,  5, -1, -1, -1],
-                    [ 6,  7,  8, -1, -1, -1]],
-
-                   [[ 9, 10, 11, 12, 13, 14],
-                    [15, 16, 17, 18, 19, 20],
-                    [-1, -1, -1, -1, -1, -1]],
-
-                   [[21, 22, 23, 24, -1, -1],
-                    [25, 26, 27, 28, -1, -1],
-                    [29, 30, 31, 32, -1, -1]]])
+            >>> jagged.arange(shape=(2, (3, 2))).to_array()
+            Traceback (most recent call last):
+                ...
+            ValueError: Cannot create a smoothe array for jagged. Try `to_iliffe` or `to_masked`.
         """
-        masked = self.to_masked()
-        if fill_value is np.nan and np.issubdtype(masked.dtype, np.integer):
-            masked = masked.astype(float)
+        if self.is_jagged:
+            msg = "Cannot create a smoothe array from jagged. Try `to_iliffe` or `to_masked`."
+            raise ValueError(msg)
+        else:
+            return np.array(self, copy=copy)
 
-        return masked.filled(fill_value)
+    def smoothe(self, axis=None):
+        """ smoothe a jagged axis by removing jagged ends.
+
+        Args:
+            jarr:
+                the jagged axis.
+            axis:
+                the axis to smoothe.  When passed `None`, smoothe all axes and
+                return a numpy array.
+
+        Examples:
+            >>> jagged.arange(shape=(3, (3, 2, 3))).smoothe()
+            array([[0, 1],
+                [3, 4],
+                [5, 6]])
+
+            >>> jagged.arange(shape=(3, (3, 2, 3))).smoothe(axis=1)
+            JaggedArray([[0, 1],
+                        [3, 4],
+                        [5, 6]])
+
+            >>> jagged.arange(shape=(3, (3, 2, 3), (2, 3, 2))).smoothe(axis=(1, 2))
+            JaggedArray([[[ 0,  1],
+                        [ 2,  3]],
+
+                        [[ 6,  7],
+                        [ 9, 10]],
+
+                        [[12, 13],
+                        [14, 15]]])
+
+            >>> jagged.arange(shape=(3, (3, 2, 3))).smoothe(axis=0)
+            Traceback (most recent call last):
+                ...
+            ValueError: axis 0 is not jagged and so cannot be smoothed.
+        """
+        from .api import smoothe
+
+        return smoothe(self, axis=axis)
 
     def clip(self, a_min=Optional[Number], a_max=Optional[Number]):
         """ Clip the values of the array.

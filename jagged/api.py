@@ -82,6 +82,8 @@ def arange(
     if shape is None and stop is None:
         raise ValueError("arange requires either a `shape` or `stop`.")
 
+    dtype = np.int if dtype is None else dtype
+
     if len(args) == 1:
         stop, = args
     elif len(args) == 2:
@@ -103,7 +105,7 @@ def arange(
             raise ValueError(f"range with size {size} cannot have given shape {shape}")
         stop = step * (start + shape.size)
 
-    return JaggedArray(np.arange(start, stop, step), shape, dtype=dtype)
+    return JaggedArray(shape, buffer=np.arange(start, stop, step), dtype=dtype)
 
 
 def zeros(shape: JaggedShapeLike, dtype: Optional[DtypeLike] = None):
@@ -1028,6 +1030,59 @@ def digitize(jarr, bins: ArrayLike, right: bool = False) -> JaggedArray:
                         [2, 2, 3]])
     """
     return JaggedArray(np.digitize(jarr.data, bins, right=right), jarr.shape)
+
+
+def smoothe(jarr, axis: AxisLike = None):
+    """ smoothe a jagged axis by removing jagged ends.
+
+    Args:
+        jarr:
+            the jagged axis.
+        axis:
+            the axis to smoothe.  When passed `None`, smoothe all axes and
+            return a numpy array.
+
+    Examples:
+        >>> jagged.arange(shape=(3, (3, 2, 3))).smoothe()
+        array([[0, 1],
+               [3, 4],
+               [5, 6]])
+
+        >>> jagged.arange(shape=(3, (3, 2, 3))).smoothe(axis=1)
+        JaggedArray([[0, 1],
+                     [3, 4],
+                     [5, 6]])
+
+        >>> jagged.arange(shape=(3, (3, 2, 3), (2, 3, 2))).smoothe(axis=(1, 2))
+        JaggedArray([[[ 0,  1],
+                      [ 2,  3]],
+
+                      [[ 6,  7],
+                       [ 9, 10]],
+
+                      [[12, 13],
+                       [14, 15]]])
+
+        >>> jagged.arange(shape=(3, (3, 2, 3))).smoothe(axis=0)
+        Traceback (most recent call last):
+            ...
+        ValueError: axis 0 is not jagged and so cannot be smoothed.
+
+    """
+    if axis is None:
+        return jarr[tuple(slice(None, ax) for ax in jarr.minshape)].to_array()
+
+    if is_integer(axis):
+        axis = (axis,)
+
+    for ax in axis:
+        if ax not in jarr.jagged_axes:
+            raise ValueError(f"axis {ax} is not jagged and so cannot be smoothed.")
+    index = tuple(
+        slice(None, ax if i in jarr.jagged_axes else None)
+        for i, ax in enumerate(jarr.minshape)
+    )
+    return jarr[index]
 
 
 if __name__ == "__main__":

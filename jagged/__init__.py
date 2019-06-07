@@ -25,9 +25,9 @@ from .api import ones_like
 from .api import random
 from .api import ravel
 from .api import resize
+from .api import smoothe
 from .api import squeeze
 from .api import stack
-from .api import trace
 from .api import where
 from .api import zeros
 from .api import zeros_like
@@ -55,11 +55,11 @@ __all__ = [
     "resize",
     "squeeze",
     "stack",
-    "trace",
     "where",
     "zeros",
     "zeros_like",
     "JaggedArray",
     "from_iliffe",
     "from_masked",
+    "smoothe",
 ]
