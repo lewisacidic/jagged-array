@@ -14,6 +14,7 @@ import numpy as np
 from .core import JaggedArray
 from .typing import DtypeLike
 from .typing import IliffeLike
+from .utils import shapes_to_shape
 
 
 def sanitize_iliffe(obj: IliffeLike):
@@ -43,12 +44,10 @@ def iliffe_to_jagged(ivec: IliffeLike, dtype: DtypeLike = None):
     """ Convert an Illife vector to a jagged array. """
 
     ivec = sanitize_iliffe(ivec)
-    return JaggedArray(
-        np.concatenate([arr.flatten() for arr in ivec]),
-        shapes=np.array([arr.shape for arr in ivec]),
-        strides=np.array([arr.strides for arr in ivec]),
-        dtype=dtype,
-    )
+    buffer = np.concatenate([arr.flatten() for arr in ivec])
+    shape = shapes_to_shape([arr.shape for arr in ivec])
+    dtype = buffer.dtype if dtype is None else dtype
+    return JaggedArray(shape, buffer=buffer, dtype=dtype)
 
 
 def jagged_to_iliffe(jarr: JaggedArray, copy: bool = False):
