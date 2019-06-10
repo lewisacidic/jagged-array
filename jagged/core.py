@@ -664,6 +664,20 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         return res
 
     @classmethod
+    def from_array(cls, arr: np.ndarray) -> JaggedArray:
+        """ Create a (flat) jagged array from a numpy array.
+
+        Examples:
+            >>> JaggedArray.from_array(np.arange(8).reshape(4, 2))
+            JaggedArray([[0, 1, 2, 3],
+                         [4, 5, 6 ,7]])
+         """
+
+        from .ndarray import array_to_jagged
+
+        return array_to_jagged(arr)
+
+    @classmethod
     def from_iliffe(cls, arr: ArrayLike, dtype: DtypeLike = None) -> JaggedArray:
         """ Create a jagged array from an Iliffe vector (array of arrays).
 
@@ -819,11 +833,9 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 ...
             ValueError: Cannot create a smoothe array for jagged. Try `to_iliffe` or `to_masked`.
         """
-        if self.is_jagged:
-            msg = "Cannot create a smoothe array from jagged. Try `to_iliffe` or `to_masked`."
-            raise ValueError(msg)
-        else:
-            return np.array(self, copy=copy)
+        from .ndarray import to_array
+
+        return to_array(self, copy=copy)
 
     def smoothe(self, axis=None):
         """ smoothe a jagged axis by removing jagged ends.
