@@ -217,11 +217,11 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> jagged.arange(shape=(3, 2, (3, 2, 3))).offsets
             (0, 48, 80, 128)
         """
-        return self.default_offsets if self._offsets is None else self._offsets
+        return self._offsets
 
     @offsets.setter
     def offsets(self, value):
-        self._offsets = value
+        self._offsets = self.default_offsets if value is None else tuple(value)
 
     @property
     def default_offsets(self):
