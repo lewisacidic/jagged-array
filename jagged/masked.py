@@ -14,9 +14,10 @@ import numpy as np
 from .core import JaggedArray
 from .typing import DtypeLike
 from .typing import JaggedShape
+from .utils import shapes_to_shape
 
 
-def shape_to_mask(shape: JaggedShape) -> np.ndarray:
+def mask_for_array(arr: JaggedArray) -> np.ndarray:
     """ the mask for a dense array for the given jagged shape.
 
     Args:
@@ -28,8 +29,8 @@ def shape_to_mask(shape: JaggedShape) -> np.ndarray:
                [False, False,  True],
                [False, False, False]])
     """
-    mask = np.ones(shape.limits, dtype=bool)
-    for m, shape in zip(mask, shape.to_shapes()):
+    mask = np.ones(arr.maxshape, dtype=bool)
+    for m, shape in zip(mask, arr.shape_array):
         m[tuple(slice(0, dim) for dim in shape)] = False
     return mask
 
@@ -53,7 +54,7 @@ def mask_to_shape(mask: np.ndarray) -> JaggedShape:
         >>> mask_to_shape([[False, False, False], [False, False, True], [False, False, False]])
         (3, (3, 2, 3))
     """
-    return JaggedShape.from_shapes(
+    return shapes_to_shape(
         np.stack([dims_for_axis(mask, axis=i) for i in range(1, mask.ndim)]).T
     )
 
@@ -70,6 +71,6 @@ def masked_to_jagged(arr: np.ma.MaskedArray, dtype: DtypeLike = None) -> JaggedA
 
 def jagged_to_masked(arr: JaggedArray) -> np.ma.MaskedArray:
     """ convert a jagged array to a masked array """
-    masked = np.ma.masked_all(arr.limits, dtype=arr.dtype)
-    masked[~shape_to_mask(arr.shape)] = arr.data
+    masked = np.ma.masked_all(arr.maxshape, dtype=arr.dtype)
+    masked[~mask_for_array(arr)] = arr.ravel()
     return masked
