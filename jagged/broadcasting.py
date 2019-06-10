@@ -10,3 +10,11 @@ jagged.broadcasting
 Broadcasting support for jagged-array.
 
 """
+
+
+def broadcast_to():
+    pass
+
+
+def broadcast_arrays(*args):
+    return args

@@ -18,6 +18,7 @@ from typing import Union
 
 import numpy as np
 
+from .broadcasting import broadcast_arrays
 from .indexing import getitem
 from .slicing import canonicalize_index
 from .typing import ArrayLike
@@ -442,6 +443,22 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
     def __getitem__(self, item):
         index = canonicalize_index(item, self.shape)
         return getitem(self, index)
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        out = kwargs.pop("out", None)
+
+        if out is not None:
+            dtype = out[0].dtype
+        else:
+            dtype = np.find_common_type(inputs, [])
+
+        if method == "__call__":
+            bcast = broadcast_arrays(*inputs)
+            res = ufunc(*[np.array(arr.data) for arr in bcast])
+            if out is None:
+                return JaggedArray(bcast[0].shape, buffer=res, dtype=dtype)
+        else:
+            return NotImplemented
 
     @property
     def size(self) -> int:
