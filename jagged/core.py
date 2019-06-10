@@ -204,8 +204,16 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @dtype.setter
     def dtype(self, value: DtypeLike):
+        old = getattr(self, "_dtype", None)
         # automatically picks the default dtype if `None` is passed
         self._dtype = np.dtype(value)
+        if old:
+            # if we previously had a dtype, we need to cast the buffer and
+            # change offsets and strides for new itemsize
+            factor = self._dtype.itemsize / old.itemsize
+            self.offsets_array = (self.offsets_array * factor).astype(int)
+            self.strides_array = (self.strides_array * factor).astype(int)
+            self.data = np.array(self.data).astype(self._dtype)
 
     @property
     def offsets(self) -> tuple:
@@ -261,6 +269,10 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             array([0, 48, 80])
         """
         return np.asarray(self.offsets)
+
+    @offsets_array.setter
+    def offsets_array(self, value):
+        self.offsets = value
 
     @property
     def strides(self):
@@ -334,6 +346,10 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                    [2, 2]])
         """
         return metadata_to_array(len(self), self.strides)
+
+    @strides_array.setter
+    def strides_array(self, value):
+        self.strides = array_to_metadata(value)
 
     @property
     def order(self):
@@ -618,7 +634,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         # everything but data is immutable, so this is fine to pass without copy
         return JaggedArray(
             self.shape,
-            buffer=self.data.copy(),
+            buffer=np.array(self.data, copy=True),
             strides=self.strides,
             dtype=self.dtype,
             offsets=self.offsets,
