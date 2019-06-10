@@ -18,6 +18,7 @@ from typing import Tuple
 import numpy as np
 
 from .core import JaggedArray
+from .factories import ascontiguousarray
 from .typing import ArrayLike
 from .typing import AxisLike
 from .typing import DtypeLike
@@ -966,7 +967,7 @@ def flatten(jarr):
         JaggedArray.flatten
         jagged.ravel
     """
-    return jarr.data.copy()
+    return np.asarray(ascontiguousarray(jarr, copy=True).data)
 
 
 def ravel(jarr):
@@ -998,7 +999,7 @@ def ravel(jarr):
         jagged.flatten
         jagged.ravel
     """
-    return jarr.data
+    return np.asarray(ascontiguousarray(jarr, copy=False).data)
 
 
 def digitize(jarr, bins: ArrayLike, right: bool = False) -> JaggedArray:
