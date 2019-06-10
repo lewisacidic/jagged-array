@@ -18,7 +18,6 @@ from typing import Union
 
 import numpy as np
 
-from .broadcasting import broadcast_arrays
 from .indexing import getitem
 from .slicing import canonicalize_index
 from .typing import ArrayLike
@@ -461,6 +460,8 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         return getitem(self, index)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        from .broadcasting import broadcast_arrays
+
         out = kwargs.pop("out", None)
 
         if out is not None:
