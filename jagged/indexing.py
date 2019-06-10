@@ -69,9 +69,9 @@ def getitem(arr, index):
 
         return arr.__class__(
             shape,
-            buffer=arr.data,
+            buffer=arr.data[offsets[0] // arr.dtype.itemsize :],
             dtype=arr.dtype,
             strides=strides,
-            offsets=offsets,
+            offsets=offsets - offsets[0],
             order=arr.order,
         )
