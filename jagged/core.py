@@ -454,7 +454,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             >>> jagged.arange(shape=(3, (4, 2, 2), (2, 3, 2))).size
             18
         """
-        return self.sizes.sum()
+        return sum(self.sizes)
 
     @property
     def sizes(self) -> Tuple[int]:
