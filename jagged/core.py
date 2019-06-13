@@ -38,6 +38,10 @@ from .utils import sanitize_shape
 class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
     """ Object supporting arrays with jagged axes off an inducing axis.
 
+    Arrays should be constructed using `jagged.array`, `jagged.zeros` etc.
+    The parameters given here refer to a low-level method for instantiating
+    an array.
+
     Args:
         shape:
             The shape of the data.
@@ -371,10 +375,10 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         This is the size along the inducing dimension.
 
         Examples:
-            >>> len(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+            >>> len(jagged.arange(shape=(3, (3, 2, 3))))
             3
 
-            >>> len(JaggedArray(np.arange(10), (5, (1, 2, 3, 2, 2))))
+            >>> len(jagged.arange(shape=(5, (1, 2, 3, 2, 2))))
             5
         """
         return self.shape[0]
@@ -386,19 +390,19 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         """ Return a string of the jagged array.
 
         Examples:
-            >>> str(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+            >>> str(jagged.arange(shape=(3, (3, 2, 3))))
             [[0 1 2]
              [3 4]
              [5 6 7]]
 
-            >>> str(JaggedArray(np.arange(8), (3, 1, (3, 2, 3))))
+            >>> str(jagged.arange(shape=(3, 1, (3, 2, 3))))
             [[[0 1 2]]
 
              [[3 4]]
 
              [[5 6 7]]]
 
-            >>> str(JaggedArray(np.arange(8), (3, (3, 2, 3), 1)))
+            >>> str(jagged.arange(shape=(3, (3, 2, 3), 1)))
             [[[0]
               [1]
               [2]]
@@ -629,7 +633,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         Examples:
             >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
             >>> ja2 = ja.copy()
-            >>> jagged.array_equal(ja == ja2)
+            >>> jagged.array_equal(ja, ja2)
             True
 
             Data is copied:
@@ -662,12 +666,12 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 the numpy dtype to use to represent data.
 
         Examples:
-            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).astype('i4')
+            >>> jagged.arange(shape=(3, (3, 2, 3))).astype('i4')
             JaggedArray([[0, 1, 2],
                          [3, 4],
                          [5, 6, 7]], dtype=int32)
 
-            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).astype('f2')
+            >>> jagged.arange(shape=(3, (3, 2, 3))).astype('f2')
             JaggedArray([[0., 1., 2.],
                          [3., 4.],
                          [5., 6., 7.]], dtype=float16)
@@ -678,7 +682,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @classmethod
     def from_array(cls, arr: np.ndarray) -> JaggedArray:
-        """ Create a (flat) jagged array from a numpy array.
+        """ Create a (smooth) jagged array from a numpy array.
 
         Examples:
             >>> JaggedArray.from_array(np.arange(8).reshape(4, 2))
@@ -767,7 +771,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         """ convert the array to a dense masked array.
 
         Examples:
-            >>> JaggedArray(np.arange(8), [[3, 2, 3]]).to_masked()
+            >>> jagged.arange(shape=(3, (3, 2, 3))).to_masked()
             masked_array(data =
              [[0 1 2]
              [3 4 --]
@@ -778,8 +782,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
              [False False False]],
                    fill_value = 999999)
 
-            >>> JaggedArray(np.arange(33), np.array([[3, 2, 3],
-            ...                                      [3, 6, 4]])).to_masked()
+            >>> jagged.arange(shape=(3, (3, 2, 3), (3, 6, 4))).to_masked()
             masked_array(data =
              [[[0 1 2 -- -- --]
               [3 4 5 -- -- --]
@@ -814,12 +817,12 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 Whether to return copies or views of the jagged array.
 
         Examples:
-            >>> JaggedArray(np.arange(8), (3, (3, 2, 3))).to_iliffe()
+            >>> jagged.arange(shape=(3, (3, 2, 3))).to_iliffe()
             array([array([0, 1, 2]),
                    array([3, 4]),
                    array([5, 6, 7])], dtype=object)
 
-            >>> JaggedArray(np.arange(33), (3, (3, 2, 3), (3, 6, 4))).to_iliffe()
+            >>> jagged.arange(shape=(3, (3, 2, 3), (3, 6, 4))).to_iliffe()
             array([array([[0, 1, 2],
                           [3, 4, 5],
                           [6, 7, 8]]),
@@ -902,17 +905,17 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 set to this value.
 
         Examples:
-            >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_min=2)
+            >>> jagged.arange(shape=(3, (2, 1, 2))).clip(a_min=2)
             JaggedArray([[2, 2],
                          [2],
                          [3, 4]])
 
-            >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_max=2)
+            >>> jagged.arange(shape=(3, (2, 1, 2))).clip(a_max=2)
             JaggedArray([[0, 1],
                          [2],
                          [2, 2]])
 
-            >>> JaggedArray(np.arange(5), (3, (2, 1, 2))).clip(a_min=1, a_max=3)
+            >>> jagged.arange(shape=(3, (2, 1, 2))).clip(a_min=1, a_max=3)
             JaggedArray([[1, 1],
                          [2],
                          [3, 3]])
@@ -929,7 +932,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             JaggedArray
 
         Examples:
-            >>> JaggedArray([1j, 1 + j, 1 - j], (2, (2, 1))).conjugate()
+            >>> jagged.array([[1j, 1 + j], [1 - j]]).conjugate()
             JaggedArray([[0.-1.j, 1.-1.j],
                          [1.+j]], dtype=complex128)
         """
@@ -945,7 +948,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 All elements of `a` will be assigned this value.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
             >>> ja.fill(0)
             >>> ja
             JaggedArray([[0, 0, 0],
@@ -960,7 +963,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         """ Return an iterator over the entries of the jagged array.
 
         Examples:
-            >>> list(JaggedArray(np.arange(8), (3, (3, 2, 3))).flat)
+            >>> list(jagged.arange(shape=(3, (3, 2, 3))).flat)
             [0, 1, 2, 3, 4, 5, 6, 7]
 
         See also:
@@ -976,7 +979,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         This creates a **copy** of the data.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
             >>> flattened = ja.flatten()
             >>> flattened
             array([0, 1, 2, 3, 4, 5, 6, 7])
@@ -1002,7 +1005,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         Creates a **view** of the data.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
             >>> ravelled = ja.ravel()
             >>> ravelled
             array([0, 1, 2, 3, 4, 5, 6])
@@ -1026,7 +1029,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         """ Get the imaginary part of the jagged array.
 
         Examples:
-            >>> JaggedArray([1j, 1 + 1j, 1 - 1j], (2, (2, 1)))
+            >>> jagged.array([[1j, 1 + 1j], [1 - 1j]]).imag
             JaggedArray([[1, 1],
                          [-1]])
         """
@@ -1048,7 +1051,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         """ Get the real part of the jagged array.
 
         Examples:
-            >>> JaggedArray([1j, 1 + 1j, 1 - 1j], (2, (2, 1)))
+            >>> jagged.array([[1j, 1 + 1j], [1 - 1j]])
             JaggedArray([[0, 1],
                          [1]])
         """
@@ -1073,7 +1076,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 the shape with which to reorient the data.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja = jagged.arange(3, (3, 2, 3)))
             >>> ja.reshape((3, (2, 3, 3)))
             JaggedArray([[0, 1],
                          [2, 3, 4],
@@ -1099,13 +1102,13 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
                 the shape of the resized array.
 
         Examples:
-            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
             >>> ja.resize((2, (3, 2)))
             >>> ja
             JaggedArray([[0, 1, 2],
                          [3, 4]])
 
-            >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+            >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
             >>> ja.resize((3, (3, 4, 3)))
             >>> ja
             JaggedArray([[0, 1, 2],
@@ -1123,21 +1126,21 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         Args:
             axis:
                 the axes to squeeze.
-        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))))
+        >>> jagged.arange(shape=(3, 1, (3, 2, 3))).squeeze()
         JaggedArray([[0, 1, 2],
                      [3, 4],
                      [5, 6, 7]])
 
         Squeezing multiple axes at once:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3), 1))
+        >>> jagged.arange(shape=(3, 1, (3, 2, 3), 1)).squeeze()
         JaggedArray([[0, 1, 2],
                      [3, 4],
                      [5, 6, 7]])
 
         Squeezing a particular axis:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3), 1)), axis=-1)
+        >>> jagged.arange(shape=(3, 1, (3, 2, 3), 1)).squeeze(axis=-1)
         JaggedArray([[[0, 1, 2]],
 
                      [[3, 4]],
@@ -1149,7 +1152,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Squeezing multiple particular axes:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, 1, (3, 2, 3), 1)), axis=(1, 2))
+        >>> jagged.arange(shape=(3, 1, 1, (3, 2, 3), 1)).squeeze(axis=(1, 2))
         JaggedArray([[[0],
                       [1],
                       [2]],
@@ -1166,21 +1169,21 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Trying to squeeze an axis with more than one entry:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))), axis=2)
+        >>> jagged.arange(shape=(3, 1, (3, 2, 3))).squeeze(axis=2)
         Traceback (most recent call last):
             ...
         ValueError: cannot select an axis to squeeze out which has size not equal to one
 
         Trying to squeeze the inducing axis:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(7), (3, 1, (3, 2, 3))), axis=0)
+        >>> jagged.arange(shape=(3, 1, (3, 2, 3))).squeeze(axis=0)
         Traceback (most recent call last):
             ...
         ValueError: cannot select an axis to squeeze out which has size not equal to one
 
         Squeezing the inducing axis when it is only of length one:
 
-        >>> JaggedArray(np.arange(4), (, (1, 2, 2))).squeeze(axis=0)
+        >>> jagged.arange(shape=(1, 2, 2))).squeeze(axis=0)
         array([[0, 1],
                [2, 3]])
 
@@ -1200,7 +1203,7 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         Examples:
         >>> import jagged
-        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+        >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
         >>> ja.expand_dims(axis=1)
         JaggedArray([[[0, 1, 2]],
 
