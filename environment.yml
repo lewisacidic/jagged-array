@@ -1,4 +1,4 @@
-name: jagged-array
+name: jagged-array-dev
 channels:
   - defaults
   - conda-forge
