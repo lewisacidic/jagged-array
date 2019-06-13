@@ -21,11 +21,9 @@ def getitem(arr, index):
     """ index a given array with a given index """
 
     ind_ix, *ixs = index
-    squeeze_ind = False
 
     if isinstance(ind_ix, int):
         ind_ix = slice(ind_ix, ind_ix + 1, 1)
-        squeeze_ind = True
 
     strides = arr.strides_array[ind_ix]
     offsets = arr.offsets_array[ind_ix]
@@ -54,24 +52,13 @@ def getitem(arr, index):
 
     shape = shapes_to_shape(shapes)
 
-    if squeeze_ind:
-        return np.ndarray(
-            shape=shapes[0],
-            buffer=arr.data,
-            dtype=arr.dtype,
-            offset=offsets[0],
-            strides=strides[0],
-            order=arr.order,
-        )
+    strides = array_to_metadata(strides)
 
-    else:
-        strides = array_to_metadata(strides)
-
-        return arr.__class__(
-            shape,
-            buffer=arr.data[offsets[0] // arr.dtype.itemsize :],
-            dtype=arr.dtype,
-            strides=strides,
-            offsets=offsets - offsets[0],
-            order=arr.order,
-        )
+    return arr.__class__(
+        shape,
+        buffer=arr.data,
+        dtype=arr.dtype,
+        strides=strides,
+        offsets=offsets,
+        order=arr.order,
+    )

@@ -477,6 +477,18 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
         else:
             return NotImplemented
 
+    def __iter__(self):
+        for shape, strides, offset in zip(
+            self.shape_array, self.strides_array, self.offsets_array
+        ):
+            yield np.ndarray(
+                shape,
+                buffer=self.data,
+                strides=strides,
+                offset=offset,
+                dtype=self.dtype,
+            )
+
     @property
     def size(self) -> int:
         """ the number of elements in the jagged array.
