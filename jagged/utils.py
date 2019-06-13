@@ -364,7 +364,7 @@ def jagged_to_string(
     # create a custom formatter for all the data
     formatter = formatter or {
         "all": np.core.arrayprint._get_format_function(
-            np.asarray(jarr.data), **np.get_printoptions()
+            jarr.flatten(), **np.get_printoptions()
         )
     }
     delim = separator + "\n" * (len(jarr.shape) - 1)
