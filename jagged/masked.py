@@ -62,15 +62,14 @@ def mask_to_shape(mask: np.ndarray) -> JaggedShape:
 def masked_to_jagged(arr: np.ma.MaskedArray, dtype: DtypeLike = None) -> JaggedArray:
     """ convert a masked array to a jagged array """
     return JaggedArray(
-        data=arr.compressed(),
         shape=mask_to_shape(arr.mask),
-        strides=arr.strides,
-        dtype=dtype,
+        buffer=arr.compressed(),
+        dtype=arr.dtype if dtype is None else dtype,
     )
 
 
 def jagged_to_masked(arr: JaggedArray) -> np.ma.MaskedArray:
     """ convert a jagged array to a masked array """
     masked = np.ma.masked_all(arr.maxshape, dtype=arr.dtype)
-    masked[~mask_for_array(arr)] = arr.ravel()
+    masked[~mask_for_array(arr)] = arr.flatten()
     return masked
