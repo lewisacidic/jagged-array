@@ -28,6 +28,7 @@ from .typing import RandomState
 from .typing import ShapeLike
 from .utils import is_integer
 from .utils import sanitize_axis
+from .utils import sanitize_shape
 from .utils import shape_is_jagged
 from .utils import shape_to_size
 
@@ -1026,6 +1027,44 @@ def digitize(jarr, bins: ArrayLike, right: bool = False) -> JaggedArray:
                         [2, 2, 3]])
     """
     return JaggedArray(np.digitize(jarr.data, bins, right=right), jarr.shape)
+
+
+def reshape(jarr: JaggedArray, newshape: JaggedShapeLike):
+    """ Gives a new shape to a jagged array without changing its data.
+
+    Args:
+        jarr:
+            the jagged array to be reshaped
+        newshape:
+            The shape of the output array. One shape dimension can be -1,
+            in this case, the axis is determined to be smooth and the
+            value is inferrred from the remaining dimensions.
+
+    Examples:
+        >>> jagged.reshape(jagged.arange(shape=(3, (3, 2, 3))), (3, (3, 3, 2)))
+        JaggedArray([[0, 1, 2],
+                     [3, 4, 5],
+                     [6, 7]])
+
+        >>> jagged.reshape(jagged.arange(shape=(3, 2, 2, (3, 2, 3))), (3, (3, 2, 3), -1)
+        JaggedArray([[[ 0,  1,  2,  3],
+                      [ 4,  5,  6,  7],
+                      [ 8,  9, 10, 11]],
+
+                     [[12, 13, 14, 15],
+                      [16, 17, 18, 19]],
+
+                     [[20, 21, 22, 23],
+                      [24, 25, 26, 27],
+                      [28, 29, 30, 31]]])
+    """
+    newshape = sanitize_shape(newshape)
+
+    if any(dim == -1 for dim in newshape):
+        raise NotImplementedError("Reshaping with -1 is not currently supported.")
+
+    jarr = ascontiguousarray(jarr)
+    return JaggedArray(newshape, buffer=jarr.data, dtype=jarr.dtype)
 
 
 def smoothe(jarr, axis: AxisLike = None):

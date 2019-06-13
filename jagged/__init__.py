@@ -24,6 +24,7 @@ from .api import ones
 from .api import ones_like
 from .api import random
 from .api import ravel
+from .api import reshape
 from .api import resize
 from .api import smoothe
 from .api import squeeze
@@ -52,6 +53,7 @@ __all__ = [
     "array_equal",
     "random",
     "ravel",
+    "reshape",
     "resize",
     "squeeze",
     "stack",
