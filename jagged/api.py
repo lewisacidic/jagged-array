@@ -147,12 +147,12 @@ def zeros_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArr
         >>> import numpy as np
         >>> import jagged
         >>> from jagged import JaggedArray
-        >>> jagged.zeros_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+        >>> jagged.zeros_like(jagged.arange(shape=(3, (3, 2, 3))))
         JaggedArray([[0, 0, 0],
                      [0, 0],
                      [0, 0, 0]])
 
-        >>> jagged.zeros_like(JaggedArray(np.arange(12), (4, 2, (1, 2, 1, 2))))
+        >>> jagged.zeros_like(jagged.arange(shape=(4, 2, (1, 2, 1, 2))))
         JaggedArray([[[0],
                       [0]],
         <BLANKLINE>
@@ -207,12 +207,12 @@ def ones_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArra
         >>> import jagged
         >>> from jagged import JaggedArray
 
-        >>> jagged.ones_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))
+        >>> jagged.ones_like(jagged.arange(shape=(3, (3, 2, 3))))
         JaggedArray([[1, 1, 1],
                      [1, 1],
                      [1, 1, 1]])
 
-        >>> jagged.ones_like(JaggedArray(np.arange(12), (4, 2, (1, 2, 1, 2))))
+        >>> jagged.ones_like(jagged.arange(shape=(4, 2, (1, 2, 1, 2))))
         JaggedArray([[[1],
                       [1]],
         <BLANKLINE>
@@ -280,12 +280,12 @@ def full_like(
         >>> import jagged
         >>> from jagged import JaggedArray
 
-        >>> jagged.full_like(JaggedArray(np.arange(8), (3, (3, 2, 3))), 42)
+        >>> jagged.full_like(jagged.array(shape=(3, (3, 2, 3))), 42)
         JaggedArray([[42, 42, 42],
                      [42, 42],
                      [42, 42, 42]])
 
-        >>> jagged.full_like(JaggedArray(np.arange(12), (4, 2, (1, 2, 1, 2))), 42)
+        >>> jagged.full_like(jagged.array(shape=(4, 2, (1, 2, 1, 2))), 42)
         JaggedArray([[[42],
                       [42]],
         <BLANKLINE>
@@ -341,12 +341,12 @@ def empty_like(arr: JaggedArray, dtype: Optional[DtypeLike] = None) -> JaggedArr
         >>> from jagged import JaggedArray
         >>> import jagged
 
-        >>> jagged.empty_like(JaggedArray(np.arange(8), (3, (3, 2, 3))))  # doctest:+SKIP
+        >>> jagged.empty_like(jagged.arange(shape=(3, (3, 2, 3))))  # doctest:+SKIP
         JaggedArray([[0, 0, 0],
                      [0, 0],
                      [0, 0, 0]])
 
-        >>> jagged.empty_like(JaggedArray(np.arange(12), (4, 2, (1, 2, 1, 2))))  # doctest:+SKIP
+        >>> jagged.empty_like(jagged.arange(shape=(4, 2, (1, 2, 1, 2))))
         JaggedArray([[[0],
                       [0]],
         <BLANKLINE>
@@ -371,22 +371,22 @@ def array_equal(x: JaggedArray, y: JaggedArray) -> bool:
         >>> from jagged import JaggedArray
 
         >>> jagged.array_equal(
-        ...    JaggedArray(np.arange(8), (3, (3, 2, 3))),
-        ...    JaggedArray(np.arange(8), shapes=[[3], [2], [3]])
+        ...    jagged.arange(shape=(3, (3, 2, 3))),
+        ...    jagged.array([[0, 1, 2], [3, 4], [5, 6, 7]])
         ... )
         True
 
         With same shapes, but different data:
         >>> jagged.array_equal(
-        ...    JaggedArray(np.arange(8), (3, (3, 2, 3))),
-        ...    JaggedArray(np.arange(8, 0, -1), (3, (3, 2, 3))),
+        ...    jagged.arange(shape=(3, (3, 2, 3))),
+        ...    jagged.arange(step=-1, shape=(3, (3, 2, 3))),
         ... )
         False
 
         With same data, but different shapes:
         >>> jagged.array_equal(
-        ...    JaggedArray(np.arange(8), (3, (3, 2, 3))),
-        ...    JaggedArray(np.arange(8), (3, (3, 3, 2))),
+        ...    jagged.arange(shape=(3, (3, 2, 3))),
+        ...    jagged.arange(shape=(3, (3, 3, 2))),
         ... )
         False
     """
@@ -546,9 +546,9 @@ def where(condition: JaggedArray, x: JaggedArray, y: JaggedArray):
         >>> import jagged
         >>> from jagged import JaggedArray
         >>> jagged.where(
-        ...     JaggedArray([True, False, True, False, True], shape=(3, (2, 1, 2))),
-        ...     JaggedArray(np.arange(5), shape=(3, (2, 1, 2))),
-        ...     JaggedArray(-np.arange(5), shape=(3, (2, 1, 2))),
+        ...     jagged.array([[True, False], [True], [False, True]]),
+        ...     jagged.arange(shape=(3, (2, 1, 2))),
+        ...     -jagged.arange(shape=(3, (2, 1, 2))),
         ... )
         JaggedArray([[ 0, -1],
                      [ 2],
@@ -575,21 +575,21 @@ def squeeze(jarr: JaggedArray, axis: Optional[AxisLike] = None) -> JaggedArray:
         >>> import numpy as np
         >>> import jagged
         >>> from jagged import JaggedArray
-        >>> jagged.squeeze(JaggedArray(np.arange(8), (3, 1, (3, 2, 3))))
+        >>> jagged.squeeze(jagged.arange(shape=(3, 1, (3, 2, 3))))
         JaggedArray([[0, 1, 2],
                      [3, 4],
                      [5, 6, 7]])
 
         Squeezing multiple axes at once:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(8), (3, 1, (3, 2, 3), 1)))
+        >>> jagged.squeeze(jagged.arange(shape=(3, 1, (3, 2, 3), 1)))
         JaggedArray([[0, 1, 2],
                      [3, 4],
                      [5, 6, 7]])
 
         Squeezing a particular axis:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(8), (3, 1, (3, 2, 3), 1)), axis=-1)
+        >>> jagged.squeeze(jagged.arange(shape=(3, 1, (3, 2, 3), 1)), axis=-1)
         JaggedArray([[[0, 1, 2]],
         <BLANKLINE>
                      [[3, 4]],
@@ -601,7 +601,7 @@ def squeeze(jarr: JaggedArray, axis: Optional[AxisLike] = None) -> JaggedArray:
 
         Squeezing multiple particular axes:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(8), (3, 1, 1, (3, 2, 3), 1)), axis=(1, 2))
+        >>> jagged.squeeze(jagged.arange(shape=(3, 1, 1, (3, 2, 3), 1)), axis=(1, 2))
         JaggedArray([[[0],
                       [1],
                       [2]],
@@ -618,24 +618,20 @@ def squeeze(jarr: JaggedArray, axis: Optional[AxisLike] = None) -> JaggedArray:
 
         Trying to squeeze an axis with more than one entry:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(8), (3, 1, (3, 2, 3))), axis=2)
+        >>> jagged.squeeze(jagged.arange(shape=(3, 1, (3, 2, 3))), axis=2)
         Traceback (most recent call last):
             ...
         ValueError: cannot select an axis to squeeze out which has size not equal to one
 
         Trying to squeeze the inducing axis:
 
-        >>> jagged.squeeze(JaggedArray(np.arange(8), (3, 1, (3, 2, 3))), axis=0)
+        >>> jagged.squeeze(jagged.arange(shape=(3, 1, (3, 2, 3))), axis=0)
         Traceback (most recent call last):
             ...
         ValueError: cannot select an axis to squeeze out which has size not equal to one
 
         Squeezing the inducing axis when it is only of length one:
 
-        >>> import warnings
-        >>> with warnings.catch_warnings():
-        ...    warnings.simplefilter("ignore")
-        ...    ja = JaggedArray(np.arange(4), (1, 2, 2))
         >>> jagged.squeeze(ja, axis=0)
         array([[0, 1],
                [2, 3]])
@@ -688,7 +684,7 @@ def expand_dims(jarr: JaggedArray, axis: int = -1) -> JaggedArray:
         >>> import jagged
         >>> from jagged import JaggedArray
 
-        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+        >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
         >>> jagged.expand_dims(ja, axis=1)
         JaggedArray([[[0, 1, 2]],
         <BLANKLINE>
@@ -719,7 +715,11 @@ def expand_dims(jarr: JaggedArray, axis: int = -1) -> JaggedArray:
     axis = sanitize_axis(axis, jarr.ndim + 1, multi=False)
     shape = jarr.shape
     if axis == 0:
-        raise ValueError("cannot expand before the jagged inducing dimension")
+        if shape[0] == 1:
+            # we can add an axis after instead(!)
+            return expand_dims(jarr, axis=1)
+        else:
+            raise ValueError("cannot expand before the jagged inducing dimension")
     else:
         axis = axis if axis >= 0 else len(shape) - axis
         shape = (*shape[:axis], 1, *shape[axis:])
@@ -740,8 +740,8 @@ def concatenate(jarrs: Iterable[JaggedArray], axis: int = 0) -> JaggedArray:
         >>> import numpy as np
         >>> import jagged
         >>> from jagged import JaggedArray
-        >>> ja1 = JaggedArray(np.arange(8), shape=(3, (3, 2, 3)))
-        >>> ja2 = JaggedArray(np.arange(9), shape=(3, (4, 3, 2)))
+        >>> ja1 = jagged.arange(shape=(3, (3, 2, 3)))
+        >>> ja2 = jagged.arange(shape=(3, (4, 3, 2)))
         >>> jagged.concatenate([ja1, ja2], axis=0)
         JaggedArray([[0, 1, 2],
                      [3, 4],
@@ -802,7 +802,7 @@ def stack(jarrs: Iterable[JaggedArray], axis: int = -1) -> JaggedArray:
         >>> import numpy as np
         >>> import jagged
         >>> from jagged import JaggedArray
-        >>> ja = JaggedArray(np.arange(8), (3, (3, 2, 3)))
+        >>> ja = jagged.arange(shape=(3, (3, 2, 3)))
 
         >>> jagged.stack([ja, ja])
         JaggedArray([[[0, 0],
@@ -866,41 +866,6 @@ def diagonal(arr: JaggedArray, offset: int = 0, axis1: int = 0, axis2: int = 1):
     raise NotImplementedError
 
 
-def trace(
-    jarr: JaggedArray,
-    offset: int = 0,
-    axis1: int = 0,
-    axis2: int = 1,
-    dtype: Optional[DtypeLike] = None,
-    out: Optional[np.ndarray] = None,
-):
-    """ Return the sum along diagonals of a jagged array.
-
-    Args:
-        jarr:
-            The jagged array from which to fetch the diagonals
-
-        offset:
-            Offset of the diagonal from the main diagonal. Can be both positive and
-            negative to access upper and lower triangle respectively.
-
-        axis1, axis2:
-            Axes to be used as the first and second axis of the subarrays from
-            which the diagonals should be taken.
-
-        dtype:
-            The data-type of the returned array.
-
-        out:
-            The array in which the output is placed.
-
-    See also:
-        JaggedArray.trace: equivalent function as method on jagged array
-        numpy.trace: equivalent function in numpy
-    """
-    raise NotImplementedError
-
-
 def resize(jarr: JaggedArray, shape: JaggedShapeLike):
     """ Resize a jagged array.
 
@@ -936,7 +901,7 @@ def resize(jarr: JaggedArray, shape: JaggedShapeLike):
                      [0, 1],
                      [2, 0, 1]])
     """
-    return JaggedArray(shape, np.resize(jarr.data, shape.size))
+    return JaggedArray(shape, buffer=np.resize(jarr.data, shape.size))
 
 
 def flatten(jarr):
@@ -1067,7 +1032,7 @@ def reshape(jarr: JaggedArray, newshape: JaggedShapeLike):
     return JaggedArray(newshape, buffer=jarr.data, dtype=jarr.dtype)
 
 
-def smoothe(jarr, axis: AxisLike = None):
+def smoothe(jarr: JaggedArray, axis: AxisLike = None):
     """ smoothe a jagged axis by removing jagged ends.
 
     Args:
