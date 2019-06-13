@@ -967,7 +967,8 @@ class JaggedArray(np.lib.mixins.NDArrayOperatorsMixin):
             ndarray.flat
             numpy.flatiter
         """
-        return np.asarray(self.data).flat
+        for arr in self:
+            yield from arr.flat
 
     def flatten(self) -> np.ndarray:
         """ Flatten the jagged array.
